@@ -117,12 +117,14 @@ def pdf_to_images(pdf_path):
     print(f"Converting PDF to images for Vision...")
     doc = fitz.open(pdf_path)
     images = []
-    for page_num in range(min(len(doc), 10)): 
+    # Process all pages
+    for page_num in range(len(doc)): 
         page = doc.load_page(page_num)
-        pix = page.get_pixmap(matrix=fitz.Matrix(3, 3)) 
+        pix = page.get_pixmap(matrix=fitz.Matrix(3, 3)) # 3x zoom for better resolution
         img_data = pix.tobytes("jpeg")
         base64_img = base64.b64encode(img_data).decode('utf-8')
         images.append(base64_img)
+    print(f"Converted {len(images)} pages to images.")
     return images
 
 # --- Deterministic Scoring Logic ---
