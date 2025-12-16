@@ -24,7 +24,7 @@ SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper()
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary") # Defaults if not running in Actions 
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
-OPENROUTER_MODEL = "x-ai/grok-4.1-fast" 
+OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-10b-v2-vl" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
 
 # --- Prompts ---
@@ -126,6 +126,7 @@ def pdf_to_images(pdf_path):
         images.append(base64_img)
     print(f"Converted {len(images)} pages to images.")
     return images
+
 # --- Deterministic Scoring Logic ---
 
 import math
@@ -290,8 +291,9 @@ def summarize_openrouter(pdf_path, ground_truth):
     }
     
     try:
-        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body)
-        response.raise_for_status()
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body, timeout=300)
+        if response.status_code != 200:
+            return f"Error {response.status_code}: {response.text}"
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
         return f"OpenRouter Error: {e}"
@@ -352,7 +354,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     html_gemini = markdown.markdown(summary_gemini, extensions=['tables'])
     
     # Format scores for display with Colors and Confidence
-    score_html = "<ul style='list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 15px;'>"
+    score_html = "<ul style='list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 15px;'">
     for k, v in scores.items():
         color = get_score_color(k, v)
         detail_text = details.get(k, "Unknown")
