@@ -56,7 +56,13 @@ Extract the following keys:
   
   // From CME Section 01 Report
   "cme_total_volume": int, // Total Exchange Volume (Combined Total)
-  "cme_total_open_interest": int // Total Open Interest (Combined Total)
+  "cme_total_open_interest": int, // Total Open Interest (Combined Total)
+  
+  // Specific OI Changes (Net Change Column)
+  "cme_rates_futures_oi_change": float, // INTEREST RATES -> FUTURES ONLY -> NET CHGE OI
+  "cme_rates_options_oi_change": float, // INTEREST RATES -> OPTIONS ONLY -> NET CHGE OI
+  "cme_equity_futures_oi_change": float, // EQUITY INDEX -> FUTURES ONLY -> NET CHGE OI
+  "cme_equity_options_oi_change": float  // EQUITY INDEX -> OPTIONS ONLY -> NET CHGE OI
 }
 """
 
