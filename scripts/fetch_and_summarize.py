@@ -205,6 +205,9 @@ def generate_html(today, summary_or, summary_gemini):
     css = """
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f4f6f8; }
     h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+    .pdf-link { display: block; text-align: center; margin-bottom: 20px; }
+    .pdf-link a { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    .pdf-link a:hover { background-color: #2980b9; }
     .container { display: flex; gap: 20px; flex-wrap: wrap; }
     .column { flex: 1; min-width: 300px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
@@ -226,6 +229,9 @@ def generate_html(today, summary_or, summary_gemini):
     </head>
     <body>
         <h1>WisdomTree Daily Summary ({today})</h1>
+        <div class="pdf-link">
+            <a href="{PDF_URL}" target="_blank">📄 View Original PDF</a>
+        </div>
         <div class="container">
             <div class="column">
                 <h2>🤖 Gemini ({GEMINI_MODEL})</h2>
