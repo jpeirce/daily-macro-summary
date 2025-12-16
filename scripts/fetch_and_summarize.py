@@ -58,6 +58,8 @@ Task: Analyze the attached “Daily Market Snapshot” PDF and produce a strateg
 
 CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores for the Dashboard. You MUST use these exact scores in your Scoreboard table. Do not hallucinate or recalculate them.
 
+However, if you find qualitative evidence in the PDF that contradicts a score (e.g., Score says 'Safe' but text says 'Bankruptcies rising'), you must explicitly mention this DIVERGENCE in the 'Justification' column or the Executive Takeaway. Do not simply rubber-stamp the score if the context suggests otherwise.
+
 Ground Truth Data:
 {ground_truth_json}
 
@@ -153,7 +155,7 @@ def calculate_deterministic_scores(extracted_data):
         ry_penalty = max(0, (real_yield - 1.5) * 2.0)
         
         final_liq = spread_component - ry_penalty
-        scores['Liquidity Conditions'] = round(min(max(final_liq, 1), 10), 1)
+        scores['Liquidity Conditions'] = round(min(max(final_liq, 0), 10), 1)
     except Exception as e:
         print(f"Error calc Liquidity: {e}")
         scores['Liquidity Conditions'] = 5.0
@@ -169,7 +171,7 @@ def calculate_deterministic_scores(extracted_data):
         # 12x -> -6 * 0.66 = -4 -> Score 1 (Cheap)
         val_score = 5.0 + ((pe_ratio - 18.0) * 0.66)
         
-        scores['Valuation Risk'] = round(min(max(val_score, 1), 10), 1)
+        scores['Valuation Risk'] = round(min(max(val_score, 0), 10), 1)
     except Exception as e:
         print(f"Error calc Valuation: {e}")
         scores['Valuation Risk'] = 5.0
@@ -186,7 +188,7 @@ def calculate_deterministic_scores(extracted_data):
         # 2.00% -> -0.25 -> * 10 -> -2.5 -> Score 2.5 (Cool)
         inf_score = 5.0 + ((inf_exp - 2.25) * 10.0)
         
-        scores['Inflation Pressure'] = round(min(max(inf_score, 1), 10), 1)
+        scores['Inflation Pressure'] = round(min(max(inf_score, 0), 10), 1)
     except Exception as e:
         print(f"Error calc Inflation: {e}")
         scores['Inflation Pressure'] = 5.0
@@ -203,7 +205,7 @@ def calculate_deterministic_scores(extracted_data):
         else:
             stress_score = 2.0 + ((hy_spread - 3.0) * 1.6)
             
-        scores['Credit Stress'] = round(min(max(stress_score, 1), 10), 1)
+        scores['Credit Stress'] = round(min(max(stress_score, 0), 10), 1)
     except Exception as e:
         print(f"Error calc Credit: {e}")
         scores['Credit Stress'] = 5.0
@@ -219,13 +221,13 @@ def calculate_deterministic_scores(extracted_data):
         else:
             curve_slope = 0.10 # Default Neutral
             
-        # Neutral (0.10%) -> Score 5
-        # Steep (+1.0%) -> Score 8+
-        # Inverted (-0.5%) -> Score 2
-        # Formula: 5 + (slope * 3.5)
-        growth_score = 5.0 + ((curve_slope - 0.10) * 3.5)
+        # Neutral (0.50%) -> Score 5 (Raised baseline per feedback)
+        # Steep (+1.50%) -> Score 8.5
+        # Inverted (-0.50%) -> Score 1.5
+        # Formula: 5 + (slope * 3.5) centered at 0.50
+        growth_score = 5.0 + ((curve_slope - 0.50) * 3.5)
         
-        scores['Growth Impulse'] = round(min(max(growth_score, 1), 10), 1)
+        scores['Growth Impulse'] = round(min(max(growth_score, 0), 10), 1)
     except Exception as e:
         print(f"Error calc Growth: {e}")
         scores['Growth Impulse'] = 5.0
@@ -235,11 +237,11 @@ def calculate_deterministic_scores(extracted_data):
     try:
         vix = data.get('vix_index')
         if vix is not None:
-            # VIX 12 -> Score 10 (Extreme Greed)
-            # VIX 20 -> Score 6 (Neutral/Caution)
-            # VIX 30 -> Score 1 (Panic)
-            risk_score = 10.0 - ((vix - 12.0) * 0.5)
-            scores['Risk Appetite'] = round(min(max(risk_score, 1), 10), 1)
+            # VIX 10 -> Score 10 (Extreme Greed)
+            # VIX 20 -> Score 5 (Neutral)
+            # VIX 30 -> Score 0 (Panic)
+            risk_score = 10.0 - ((vix - 10.0) * 0.5)
+            scores['Risk Appetite'] = round(min(max(risk_score, 0), 10), 1)
         else:
             scores['Risk Appetite'] = 7.0 # Default Greed if VIX missing
     except:
