@@ -229,9 +229,20 @@ def calculate_deterministic_scores(extracted_data):
         print(f"Error calc Growth: {e}")
         scores['Growth Impulse'] = 5.0
 
-    # 6. Risk Appetite (Placeholder)
-    # Kept fixed unless you extract VIX or Momentum data
-    scores['Risk Appetite'] = 7.0
+    # --- 6. RISK APPETITE (Higher = Greed) ---
+    # LOGIC: Uses VIX if available. Lower VIX = Higher Appetite.
+    try:
+        vix = data.get('vix_index')
+        if vix is not None:
+            # VIX 12 -> Score 10 (Extreme Greed)
+            # VIX 20 -> Score 6 (Neutral/Caution)
+            # VIX 30 -> Score 1 (Panic)
+            risk_score = 10.0 - ((vix - 12.0) * 0.5)
+            scores['Risk Appetite'] = round(min(max(risk_score, 1), 10), 1)
+        else:
+            scores['Risk Appetite'] = 7.0 # Default Greed if VIX missing
+    except:
+        scores['Risk Appetite'] = 7.0
     
     print(f"Calculated Scores: {scores}")
     return scores
