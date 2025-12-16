@@ -6,6 +6,7 @@ import google.generativeai as genai
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+import time # For retry mechanism
 
 # Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -17,7 +18,7 @@ SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper() # ALL, OPENR
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
 OPENROUTER_MODEL = "openai/gpt-5.2" # or gpt-4o, etc.
-GEMINI_MODEL = "gemini-3-pro-preview"
+GEMINI_MODEL = "gemini-experimental" # Changed to gemini-experimental
 
 def download_pdf(url, filename):
     print(f"Downloading PDF from {url}...")
@@ -79,18 +80,27 @@ def summarize_gemini(text):
         "Structure it clearly with headers.\n\n" + text
     )
     
-    try:
-        response = model.generate_content(prompt)
-        return response.text
-    except genai.types.BlockedPromptException as e:
-        print(f"Gemini Blocked Prompt Error: {e}")
-        return f"Gemini Blocked Prompt Error: {e}"
-    except Exception as e:
-        if "429" in str(e): # Specific check for rate limit errors in the exception string
-            print(f"Gemini Rate Limit Error (429): {e}")
-            return "Gemini Error: Rate limit exceeded (429). Please try again later or check your quota."
-        print(f"Gemini Error: {e}")
-        return f"Gemini Error: {e}"
+    retries = 3
+    for i in range(retries):
+        try:
+            response = model.generate_content(prompt)
+            return response.text
+        except genai.types.BlockedPromptException as e:
+            print(f"Gemini Blocked Prompt Error: {e}")
+            return f"Gemini Blocked Prompt Error: {e}"
+        except Exception as e:
+            if "429" in str(e): # Specific check for rate limit errors in the exception string
+                print(f"Gemini Rate Limit Error (429): {e}")
+                if i < retries - 1:
+                    wait_time = (2 ** i) * 5 # Exponential backoff: 5, 10, 20 seconds
+                    print(f"Retrying Gemini in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    return "Gemini Error: Rate limit exceeded (429) after multiple retries. Please check your quota."
+            else:
+                print(f"Gemini Error: {e}")
+                return f"Gemini Error: {e}"
+    return "Gemini Error: Unknown error after retries." # Should not be reached
 
 def send_email(subject, body_markdown):
     print("Sending email...")
