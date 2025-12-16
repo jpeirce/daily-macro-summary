@@ -2,3 +2,4 @@ requests
 PyMuPDF
 google-generativeai
 markdown
+yfinance

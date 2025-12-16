@@ -8,6 +8,7 @@ import base64
 import json
 import re
 import math
+import yfinance as yf
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -448,6 +449,20 @@ def send_email(subject, body_markdown, pages_url):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+def fetch_live_data():
+    print("Fetching live market data (fallback)...")
+    data = {}
+    try:
+        # Fetch VIX
+        vix = yf.Ticker("^VIX")
+        hist = vix.history(period="1d")
+        if not hist.empty:
+            data['vix_index'] = round(hist['Close'].iloc[-1], 2)
+            print(f"Live VIX: {data['vix_index']}")
+    except Exception as e:
+        print(f"Error fetching live data: {e}")
+    return data
+
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
     pdf_path = "daily-dashboard.pdf"
@@ -463,7 +478,17 @@ def main():
     algo_scores = {}
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
         extracted_metrics = extract_metrics_gemini(pdf_path)
-        algo_scores = calculate_deterministic_scores(extracted_metrics)
+    
+    # Fetch Live Fallbacks (VIX)
+    live_metrics = fetch_live_data()
+    
+    # Merge (PDF takes precedence usually, but VIX is often missing from PDF)
+    # If PDF has null for a key, allow live data to fill it.
+    for k, v in live_metrics.items():
+        if k not in extracted_metrics or extracted_metrics[k] is None:
+            extracted_metrics[k] = v
+
+    algo_scores = calculate_deterministic_scores(extracted_metrics)
     
     ground_truth_context = {
         "extracted_metrics": extracted_metrics,
