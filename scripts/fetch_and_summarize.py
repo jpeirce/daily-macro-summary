@@ -80,14 +80,16 @@ Output Structure:
 
 ### 0. Visual Data Extraction (Internal Monologue - Brief)
 *Instructions: Scan the CME Image (Section 01).*
-A. Scan "FUTURES ONLY" Block (Middle of page):
-   * Extract "EQUITY INDEX" Futures OI Change. (Is it positive?)
-   * Extract "INTEREST RATES" Futures OI Change. (Is it positive?)
-B. Scan "OPTIONS ONLY" Block (Bottom of page):
+A. Scan "FUTURES ONLY" Block:
+   * Extract "EQUITY INDEX" Futures OI Change.
+   * Extract "INTEREST RATES" Futures OI Change.
+B. Scan "OPTIONS ONLY" Block:
+   * Extract "EQUITY INDEX" Options OI Change.
    * Extract "INTEREST RATES" Options OI Change.
-C. The "Signal Check":
-   * Compare Rates Futures OI vs. Rates Options OI.
-   * *Logic:* If Options OI change is larger than Futures OI change, the signal is "Hedging/Volatility," NOT "Directional Shorting."
+C. The "Signal Check" (Crucial):
+   * *Equities:* Compare Equity Futures OI vs. Equity Options OI. If Futures > Options, signal is "Directional." If Options > Futures, signal is "Hedging/Volatility."
+   * *Rates:* Compare Rates Futures OI vs. Rates Options OI. Same logic.
+   * *Price Check:* Note that price direction (Up/Down) comes from the WisdomTree Snapshot, NOT this CME report. Combine WisdomTree Price + CME Futures OI to infer conviction.
 
 ### 1. The Dashboard (Scoreboard)
 
@@ -105,7 +107,7 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 
 ### 2. Executive Takeaway (5–7 sentences)
 [Regime Name, The Driver, The Pivot]
-*Constraint: When citing CME positioning, explicitly state if the move is driven by Futures (Directional) or Options (Hedging). Do not overclaim "smart money" intent if the volume is mostly Options.*
+*Constraint: Explicitly state if the CME positioning (OI changes) confirms the price action seen in the WisdomTree charts. Use Combined Totals ONLY for gauging general liquidity/participation. Do NOT use Combined Totals for directional conviction.*
 
 ### 3. The "Fiscal Dominance" Check (Monetary Stress)
 [Data, Implication]
@@ -115,16 +117,16 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 **The Positioning Check (Source: CME Section 01 Images):**
 * **Step 1:** Compare "FUTURES ONLY" OI Change vs. "OPTIONS ONLY" OI Change for Interest Rates.
 * **Step 2: Determine Signal Quality:**
-    * *IF Futures OI > Options OI:* You may describe the move with **High Confidence** (e.g., "Aggressive directional positioning driven by futures").
-    * *IF Options OI > Futures OI:* You must **Qualify** the signal (e.g., "While total participation rose, the move was dominated by Options activity, suggesting complex positioning or hedging rather than a pure directional bet").
-* **Output:** State the Total OI change, then explicitly note the Futures/Options split to justify your confidence level.
+    * *IF Futures OI > Options OI:* You may describe the move with **High Confidence** (e.g., "Directional positioning likely increased").
+    * *IF Options OI > Futures OI:* You must **Qualify** the signal (e.g., "Dominated by Options activity, suggesting complex positioning or hedging rather than a pure directional bet").
+* **Output:** State the Futures/Options split to justify your confidence level. Combine with WisdomTree Yield direction (e.g., Yields Up + Futures OI Up = Likely Shorting).
 
 ### 5. The "Canary in the Coal Mine" (Credit Stress)
 [Data, Implication]
 
 ### 6. The "Engine Room" (Market Breadth)
 [Data, Implication]
-*Synthesize the CME Image data. Compare the 'Aggregate Volume' and 'Open Interest' changes. Is the market leverage expanding or contracting?*
+*Synthesize the CME Image data. Check the Equity Index Futures vs. Options OI split. Is the leverage expansion driven by directional bets (Futures) or hedging (Options)?*
 
 ### 7. Valuation & "Smart Money"
 [Data, International, Implication]
