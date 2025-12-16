@@ -8,6 +8,7 @@ on:
 jobs:
   run-summary:
     runs-on: ubuntu-latest
+    SUMMARIZE_PROVIDER: GEMINI # <-- Add this line
     steps:
       - uses: actions/checkout@v3
       

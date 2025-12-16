@@ -17,7 +17,7 @@ SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper() # ALL, OPENR
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
 OPENROUTER_MODEL = "openai/gpt-5.2" # or gpt-4o, etc.
-GEMINI_MODEL = "gemini-2.0-flash-exp"
+GEMINI_MODEL = "gemini-3-pro-preview"
 
 def download_pdf(url, filename):
     print(f"Downloading PDF from {url}...")
