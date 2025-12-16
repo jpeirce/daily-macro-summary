@@ -3,6 +3,7 @@ import requests
 import fitz  # PyMuPDF
 import smtplib
 import google.generativeai as genai
+import markdown
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
@@ -15,10 +16,11 @@ SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper() # ALL, OPENROUTER, GEMINI, NONE
+GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-wisdomtree") # Defaults if not running in Actions
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
 OPENROUTER_MODEL = "openai/gpt-5.2" # or gpt-4o, etc.
-GEMINI_MODEL = "gemini-3-pro-preview" # Changed to gemini-experimental
+GEMINI_MODEL = "gemini-3-pro-preview" 
 
 def download_pdf(url, filename):
     print(f"Downloading PDF from {url}...")
@@ -102,7 +104,55 @@ def summarize_gemini(text):
                 return f"Gemini Error: {e}"
     return "Gemini Error: Unknown error after retries." # Should not be reached
 
-def send_email(subject, body_markdown):
+def generate_html(today, summary_or, summary_gemini):
+    print("Generating HTML report...")
+    
+    html_or = markdown.markdown(summary_or)
+    html_gemini = markdown.markdown(summary_gemini)
+    
+    css = """
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f4f6f8; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .column { flex: 1; min-width: 300px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
+    .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: #666; }
+    @media (max-width: 768px) { .container { flex-direction: column; } }
+    """
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>WisdomTree Daily Summary - {today}</title>
+        <style>{css}</style>
+    </head>
+    <body>
+        <h1>WisdomTree Daily Summary ({today})</h1>
+        <div class="container">
+            <div class="column">
+                <h2>🤖 Gemini ({GEMINI_MODEL})</h2>
+                {html_gemini}
+            </div>
+            <div class="column">
+                <h2>🧠 OpenRouter ({OPENROUTER_MODEL})</h2>
+                {html_or}
+            </div>
+        </div>
+        <div class="footer">
+            Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        </div>
+    </body>
+    </html>
+    """
+    
+    with open("summaries/index.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print("HTML report generated: summaries/index.html")
+
+def send_email(subject, body_markdown, pages_url):
     print("Sending email...")
     if not (SMTP_EMAIL and SMTP_PASSWORD and RECIPIENT_EMAIL):
         print("Skipping email: Credentials not set.")
@@ -113,7 +163,12 @@ def send_email(subject, body_markdown):
     msg['To'] = RECIPIENT_EMAIL
     msg['Subject'] = subject
 
-    msg.attach(MIMEText(body_markdown, 'plain'))
+    # Add link to web view
+    full_body = body_markdown
+    if pages_url:
+        full_body = f"🌐 **View as Webpage:** {pages_url}\n\n" + full_body
+
+    msg.attach(MIMEText(full_body, 'plain'))
 
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
@@ -149,6 +204,9 @@ def main():
     with open(f"summaries/{today}_gemini.md", "w", encoding="utf-8") as f:
         f.write(summary_gemini)
 
+    # Generate HTML Report
+    generate_html(today, summary_or, summary_gemini)
+
     # Prepare Email
     email_subject = f"WisdomTree Daily Summary - {today}"
     if SUMMARIZE_PROVIDER == "ALL":
@@ -166,7 +224,12 @@ def main():
     if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
         email_body += f"## 🧠 OpenRouter Summary\n\n{summary_or}\n"
     
-    send_email(email_subject, email_body)
+    # Determine Pages URL (Best Guess)
+    repo_name = GITHUB_REPOSITORY.split("/")[-1] # e.g., daily-wisdomtree
+    owner_name = GITHUB_REPOSITORY.split("/")[0] # e.g., jpeirce
+    pages_url = f"https://{owner_name}.github.io/{repo_name}/"
+    
+    send_email(email_subject, email_body, pages_url)
 
 if __name__ == "__main__":
     main()

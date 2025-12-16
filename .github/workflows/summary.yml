@@ -5,6 +5,9 @@ on:
     - cron: '0 15 * * *' # 8am MST / 3pm UTC
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-summary:
     runs-on: ubuntu-latest
@@ -28,7 +31,8 @@ jobs:
           SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
-          SUMMARIZE_PROVIDER: GEMINI
+          SUMMARIZE_PROVIDER: ALL
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: python scripts/fetch_and_summarize.py
         
       - name: Archive summaries
@@ -36,3 +40,10 @@ jobs:
         with:
           name: daily-summaries
           path: summaries/
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./summaries
+          force_orphan: true
