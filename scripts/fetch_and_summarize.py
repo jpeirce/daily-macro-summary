@@ -24,7 +24,7 @@ SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper()
 GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary") # Defaults if not running in Actions 
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
-OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-v2-vl" 
+OPENROUTER_MODEL = "x-ai/grok-4.1-fast" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
 
 # --- Prompts ---
