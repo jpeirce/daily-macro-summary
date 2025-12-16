@@ -1,2 +1,3 @@
 requests
 PyMuPDF
+google-generativeai

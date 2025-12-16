@@ -1,74 +1,144 @@
 import os
 import requests
 import fitz  # PyMuPDF
+import smtplib
+import google.generativeai as genai
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = "openai/gpt-5.2"
-PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
+# Configuration
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+AI_STUDIO_API_KEY = os.getenv("AI_STUDIO_API_KEY")
+SMTP_EMAIL = os.getenv("SMTP_EMAIL")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 
-MAX_COST_DOLLARS = 0.10
-COST_PER_K_INPUT = 0.00175
-COST_PER_K_OUTPUT = 0.014
-EST_OUTPUT_TOKENS = 1330
+PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
+OPENROUTER_MODEL = "openai/gpt-5.2" # or gpt-4o, etc.
+GEMINI_MODEL = "gemini-2.0-flash-exp"
 
 def download_pdf(url, filename):
+    print(f"Downloading PDF from {url}...")
     response = requests.get(url)
+    response.raise_for_status()
     with open(filename, "wb") as f:
         f.write(response.content)
+    print("Download complete.")
 
 def extract_text(pdf_path):
+    print(f"Extracting text from {pdf_path}...")
     doc = fitz.open(pdf_path)
-    return "\n".join([page.get_text() for page in doc])
+    text = "\n".join([page.get_text() for page in doc])
+    print(f"Extracted {len(text)} characters.")
+    return text
 
-def count_tokens(text):
-    word_count = len(text.split())
-    return int(word_count * 1.33)
-
-def estimate_cost(input_tokens):
-    return (input_tokens / 1000) * COST_PER_K_INPUT + (EST_OUTPUT_TOKENS / 1000) * COST_PER_K_OUTPUT
-
-def log_token_usage(date, input_tokens, estimated_cost):
-    with open("summaries/tokens.log", "a") as log:
-        log.write(f"{date}, input: {input_tokens}, est. cost: ${estimated_cost:.4f}\n")
-
-def summarize(text):
+def summarize_openrouter(text):
+    print(f"Summarizing with OpenRouter ({OPENROUTER_MODEL})...")
+    if not OPENROUTER_API_KEY:
+        return "Error: OPENROUTER_API_KEY not set."
+        
     prompt = (
         "You are a financial analyst AI. Summarize the key data and market signals from the following "
-        "Daily Dashboard. The summary should be ~1000 words, include markdown formatting, and highlight "
+        "Daily Dashboard. The summary should be ~800 words, include markdown formatting, and highlight "
         "macro trends, valuation signals, sentiment shifts, and market breadth.\n\n" + text
     )
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "HTTP-Referer": "https://chat.openai.com",
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "https://github.com/jpeirce/daily-wisdomtree",
         "X-Title": "WisdomTree Daily Summary",
         "Content-Type": "application/json"
     }
     body = {
-        "model": MODEL,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
+        "model": OPENROUTER_MODEL,
+        "messages": [{"role": "user", "content": prompt}]
     }
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body)
-    return response.json()["choices"][0]["message"]["content"]
+    try:
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"OpenRouter Error: {e}"
+
+def summarize_gemini(text):
+    print(f"Summarizing with Gemini ({GEMINI_MODEL})...")
+    if not AI_STUDIO_API_KEY:
+        return "Error: AI_STUDIO_API_KEY not set."
+
+    genai.configure(api_key=AI_STUDIO_API_KEY)
+    model = genai.GenerativeModel(GEMINI_MODEL)
+    
+    prompt = (
+        "You are a financial analyst AI. Summarize the key data and market signals from the following "
+        "Daily Dashboard text. The summary should be ~800 words, include markdown formatting, and highlight "
+        "macro trends, valuation signals, sentiment shifts, and market breadth. "
+        "Structure it clearly with headers.\n\n" + text
+    )
+    
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Gemini Error: {e}"
+
+def send_email(subject, body_markdown):
+    print("Sending email...")
+    if not (SMTP_EMAIL and SMTP_PASSWORD and RECIPIENT_EMAIL):
+        print("Skipping email: Credentials not set.")
+        return
+
+    msg = MIMEMultipart()
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = RECIPIENT_EMAIL
+    msg['Subject'] = subject
+
+    # Attach the body as plain text (markdown)
+    # Ideally, we could convert markdown to HTML for a prettier email, 
+    # but plain text is fine for now.
+    msg.attach(MIMEText(body_markdown, 'plain'))
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.send_message(msg)
+        print("Email sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
     pdf_path = "daily-dashboard.pdf"
-    download_pdf(PDF_URL, pdf_path)
-    raw_text = extract_text(pdf_path)
-    input_tokens = count_tokens(raw_text)
-    cost = estimate_cost(input_tokens)
-
-    if cost > MAX_COST_DOLLARS:
-        print(f"⚠️ Estimated cost ${cost:.4f} exceeds limit of ${MAX_COST_DOLLARS:.2f}. Aborting.")
+    
+    try:
+        download_pdf(PDF_URL, pdf_path)
+        raw_text = extract_text(pdf_path)
+    except Exception as e:
+        print(f"Error fetching/reading PDF: {e}")
         return
 
-    summary = summarize(raw_text)
-    with open(f"summaries/{today}.md", "w", encoding="utf-8") as f:
-        f.write(summary)
-    log_token_usage(today, input_tokens, cost)
+    # A/B Testing: Run both
+    summary_or = summarize_openrouter(raw_text)
+    summary_gemini = summarize_gemini(raw_text)
+    
+    # Save locally
+    os.makedirs("summaries", exist_ok=True)
+    with open(f"summaries/{today}_openrouter.md", "w", encoding="utf-8") as f:
+        f.write(summary_or)
+    with open(f"summaries/{today}_gemini.md", "w", encoding="utf-8") as f:
+        f.write(summary_gemini)
+
+    # Prepare Email
+    email_subject = f"WisdomTree Daily Summary - {today} (A/B Test)"
+    email_body = (
+        f"# Daily WisdomTree Summary ({today})\n\n"
+        f"Automated comparison of OpenRouter ({OPENROUTER_MODEL}) and Gemini ({GEMINI_MODEL}).\n\n"
+        f"---\n\n"
+        f"## 🤖 Gemini Summary\n\n{summary_gemini}\n\n"
+        f"---\n\n"
+        f"## 🧠 OpenRouter Summary\n\n{summary_or}\n"
+    )
+    
+    send_email(email_subject, email_body)
 
 if __name__ == "__main__":
     main()
