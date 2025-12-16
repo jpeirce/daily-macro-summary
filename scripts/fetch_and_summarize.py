@@ -164,29 +164,37 @@ def summarize_openrouter(text):
     except Exception as e:
         return f"OpenRouter Error: {e}"
 
-def summarize_gemini(text):
-    print(f"Summarizing with Gemini ({GEMINI_MODEL})...")
+def summarize_gemini(pdf_path):
+    print(f"Summarizing with Gemini ({GEMINI_MODEL}) - Using Native PDF Vision...")
     if not AI_STUDIO_API_KEY:
         return "Error: AI_STUDIO_API_KEY not set."
 
     genai.configure(api_key=AI_STUDIO_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
     
-    prompt = f"{SYSTEM_PROMPT}\n\nDATA:\n{text}"
+    # Upload the PDF file
+    print("Uploading PDF to Gemini...")
+    try:
+        sample_pdf = genai.upload_file(pdf_path, mime_type="application/pdf")
+        print(f"Uploaded file: {sample_pdf.uri}")
+    except Exception as e:
+        print(f"Failed to upload PDF to Gemini: {e}")
+        return f"Gemini Error: PDF Upload Failed - {e}"
     
     retries = 3
     for i in range(retries):
         try:
-            response = model.generate_content(prompt)
+            # Pass the prompt AND the file
+            response = model.generate_content([SYSTEM_PROMPT, sample_pdf])
             return response.text
         except genai.types.BlockedPromptException as e:
             print(f"Gemini Blocked Prompt Error: {e}")
             return f"Gemini Blocked Prompt Error: {e}"
         except Exception as e:
-            if "429" in str(e): # Specific check for rate limit errors in the exception string
+            if "429" in str(e): 
                 print(f"Gemini Rate Limit Error (429): {e}")
                 if i < retries - 1:
-                    wait_time = (2 ** i) * 5 # Exponential backoff: 5, 10, 20 seconds
+                    wait_time = (2 ** i) * 5 
                     print(f"Retrying Gemini in {wait_time} seconds...")
                     time.sleep(wait_time)
                 else:
@@ -194,7 +202,7 @@ def summarize_gemini(text):
             else:
                 print(f"Gemini Error: {e}")
                 return f"Gemini Error: {e}"
-    return "Gemini Error: Unknown error after retries." # Should not be reached
+    return "Gemini Error: Unknown error after retries."
 
 def generate_html(today, summary_or, summary_gemini):
     print("Generating HTML report...")
@@ -296,7 +304,7 @@ def main():
     if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
         summary_or = summarize_openrouter(raw_text)
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        summary_gemini = summarize_gemini(raw_text)
+        summary_gemini = summarize_gemini(pdf_path) # Pass PDF path, not text
     
     # Save locally
     os.makedirs("summaries", exist_ok=True)
