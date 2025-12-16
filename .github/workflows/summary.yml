@@ -2,7 +2,7 @@ name: Daily WisdomTree Summary
 
 on:
   schedule:
-    - cron: '0 15 * * *' # 8am MST / 3pm UTC
+    - cron: '0 15 * * 1-5' # 8am MST / 3pm UTC, Mon-Fri
   workflow_dispatch:
 
 permissions:
