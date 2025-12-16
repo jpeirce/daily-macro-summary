@@ -79,7 +79,15 @@ formatting: Use '###' for all section headers.
 Output Structure:
 
 ### 0. Visual Data Extraction (Internal Monologue - Brief)
-*Instructions: Briefly scan the Section 0 CME Image. Identify the "TOTAL" or "OVERALL" row for Equities and Rates. Note if Open Interest (OI) is positive (+) or negative (-) and if Volume is heavy.*
+*Instructions: Scan the CME Image (Section 01).*
+A. Scan "FUTURES ONLY" Block (Middle of page):
+   * Extract "EQUITY INDEX" Futures OI Change. (Is it positive?)
+   * Extract "INTEREST RATES" Futures OI Change. (Is it positive?)
+B. Scan "OPTIONS ONLY" Block (Bottom of page):
+   * Extract "INTEREST RATES" Options OI Change.
+C. The "Signal Check":
+   * Compare Rates Futures OI vs. Rates Options OI.
+   * *Logic:* If Options OI change is larger than Futures OI change, the signal is "Hedging/Volatility," NOT "Directional Shorting."
 
 ### 1. The Dashboard (Scoreboard)
 
@@ -97,14 +105,19 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 
 ### 2. Executive Takeaway (5–7 sentences)
 [Regime Name, The Driver, The Pivot]
-*Explicitly state if the CME positioning (OI changes) confirms the price action seen in the WisdomTree charts.*
+*Constraint: When citing CME positioning, explicitly state if the move is driven by Futures (Directional) or Options (Hedging). Do not overclaim "smart money" intent if the volume is mostly Options.*
 
 ### 3. The "Fiscal Dominance" Check (Monetary Stress)
 [Data, Implication]
 
 ### 4. Rates & Curve Profile
 [Shape, Implication]
-*CRITICAL: Compare the Yield Curve shape (WisdomTree Image) with CME Rates Open Interest (CME Image). Are rising yields supported by rising OI (Real Selling) or falling OI?*
+**The Positioning Check (Source: CME Section 01 Images):**
+* **Step 1:** Compare "FUTURES ONLY" OI Change vs. "OPTIONS ONLY" OI Change for Interest Rates.
+* **Step 2: Determine Signal Quality:**
+    * *IF Futures OI > Options OI:* You may describe the move with **High Confidence** (e.g., "Aggressive directional positioning driven by futures").
+    * *IF Options OI > Futures OI:* You must **Qualify** the signal (e.g., "While total participation rose, the move was dominated by Options activity, suggesting complex positioning or hedging rather than a pure directional bet").
+* **Output:** State the Total OI change, then explicitly note the Futures/Options split to justify your confidence level.
 
 ### 5. The "Canary in the Coal Mine" (Credit Stress)
 [Data, Implication]
