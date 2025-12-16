@@ -53,7 +53,11 @@ pip install -r requirements.txt
 The script `scripts/fetch_and_summarize.py` contains configurable constants at the top:
 *   `MODEL`: The LLM model string (default: "openai/gpt-5.2").
 *   `MAX_COST_DOLLARS`: Safety limit for API costs per run.
-*   `PDF_URL`: Target URL for the dashboard PDF.
+*   `SUMMARIZE_PROVIDER`: Controls which LLM provider(s) to use for summarization.
+    *   `ALL` (default): Runs both OpenRouter and Gemini.
+    *   `OPENROUTER`: Runs only OpenRouter.
+    *   `GEMINI`: Runs only Gemini.
+    *   `NONE`: Skips all LLM summarization.
 
 ## Automation
 

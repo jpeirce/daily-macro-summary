@@ -13,6 +13,7 @@ AI_STUDIO_API_KEY = os.getenv("AI_STUDIO_API_KEY")
 SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
+SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper() # ALL, OPENROUTER, GEMINI, NONE
 
 PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
 OPENROUTER_MODEL = "openai/gpt-5.2" # or gpt-4o, etc.
@@ -57,6 +58,9 @@ def summarize_openrouter(text):
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=body)
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
+    except requests.exceptions.HTTPError as e:
+        print(f"OpenRouter HTTP Error: {e.response.status_code} - {e.response.text}")
+        return f"OpenRouter HTTP Error ({e.response.status_code}): {e.response.text}"
     except Exception as e:
         return f"OpenRouter Error: {e}"
 
@@ -78,7 +82,14 @@ def summarize_gemini(text):
     try:
         response = model.generate_content(prompt)
         return response.text
+    except genai.types.BlockedPromptException as e:
+        print(f"Gemini Blocked Prompt Error: {e}")
+        return f"Gemini Blocked Prompt Error: {e}"
     except Exception as e:
+        if "429" in str(e): # Specific check for rate limit errors in the exception string
+            print(f"Gemini Rate Limit Error (429): {e}")
+            return "Gemini Error: Rate limit exceeded (429). Please try again later or check your quota."
+        print(f"Gemini Error: {e}")
         return f"Gemini Error: {e}"
 
 def send_email(subject, body_markdown):
@@ -92,9 +103,6 @@ def send_email(subject, body_markdown):
     msg['To'] = RECIPIENT_EMAIL
     msg['Subject'] = subject
 
-    # Attach the body as plain text (markdown)
-    # Ideally, we could convert markdown to HTML for a prettier email, 
-    # but plain text is fine for now.
     msg.attach(MIMEText(body_markdown, 'plain'))
 
     try:
@@ -116,9 +124,13 @@ def main():
         print(f"Error fetching/reading PDF: {e}")
         return
 
-    # A/B Testing: Run both
-    summary_or = summarize_openrouter(raw_text)
-    summary_gemini = summarize_gemini(raw_text)
+    summary_or = "OpenRouter summary skipped."
+    summary_gemini = "Gemini summary skipped."
+
+    if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
+        summary_or = summarize_openrouter(raw_text)
+    if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
+        summary_gemini = summarize_gemini(raw_text)
     
     # Save locally
     os.makedirs("summaries", exist_ok=True)
@@ -128,15 +140,21 @@ def main():
         f.write(summary_gemini)
 
     # Prepare Email
-    email_subject = f"WisdomTree Daily Summary - {today} (A/B Test)"
+    email_subject = f"WisdomTree Daily Summary - {today}"
+    if SUMMARIZE_PROVIDER == "ALL":
+        email_subject += " (A/B Test)"
+    else:
+        email_subject += f" ({SUMMARIZE_PROVIDER} Only)"
+
     email_body = (
         f"# Daily WisdomTree Summary ({today})\n\n"
-        f"Automated comparison of OpenRouter ({OPENROUTER_MODEL}) and Gemini ({GEMINI_MODEL}).\n\n"
+        f"Generated with provider: {SUMMARIZE_PROVIDER}\n\n"
         f"---\n\n"
-        f"## 🤖 Gemini Summary\n\n{summary_gemini}\n\n"
-        f"---\n\n"
-        f"## 🧠 OpenRouter Summary\n\n{summary_or}\n"
     )
+    if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
+        email_body += f"## 🤖 Gemini Summary\n\n{summary_gemini}\n\n---\n\n"
+    if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
+        email_body += f"## 🧠 OpenRouter Summary\n\n{summary_or}\n"
     
     send_email(email_subject, email_body)
 
