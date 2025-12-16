@@ -94,7 +94,7 @@ The `scripts/fetch_and_summarize.py` script respects the following environment v
 ## GitHub Actions Automation
 
 The workflow is configured to run daily:
-*   **Schedule:** Every day at 15:00 UTC (8:00 AM Mountain Time).
+*   **Schedule:** Monday-Friday at 15:00 UTC (8:00 AM Mountain Time).
 *   **Workflow File:** `.github/workflows/summary.yml`
 *   **Prompt:** The detailed LLM prompt is embedded directly in `scripts/fetch_and_summarize.py` as `SYSTEM_PROMPT`.
 
