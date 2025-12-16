@@ -27,7 +27,7 @@ PDF_SOURCES = {
     "wisdomtree": "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf",
     "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf"
 }
-OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-v2-vl" 
+OPENROUTER_MODEL = "openai/gpt-5.2" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
 
 # --- Prompts ---
