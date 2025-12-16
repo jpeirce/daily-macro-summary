@@ -21,34 +21,42 @@ SMTP_EMAIL = os.getenv("SMTP_EMAIL")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 RECIPIENT_EMAIL = os.getenv("RECIPIENT_EMAIL")
 SUMMARIZE_PROVIDER = os.getenv("SUMMARIZE_PROVIDER", "ALL").upper() 
-GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary") # Defaults if not running in Actions 
+GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary") 
 
-PDF_URL = "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf"
-OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-10b-v2-vl" 
+PDF_SOURCES = {
+    "wisdomtree": "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf",
+    "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf"
+}
+OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-v2-vl" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
 
 # --- Prompts ---
 
 EXTRACTION_PROMPT = """
-You are a precision data extractor. Your job is to read PDF pages containing financial dashboards and extract specific numerical data into valid JSON.
+You are a precision data extractor. Your job is to read the attached PDF pages (Financial Dashboard + CME Reports) and extract specific numerical data into valid JSON.
 
 • DO NOT provide commentary, analysis, or summary.
 • ONLY return a valid JSON object.
-• Extract numbers as decimals (e.g., 2.84, not "2.84%" or "two point eight four").
+• Extract numbers as decimals.
 • If a value is missing or unreadable, use `null`.
 
-Extract the following keys from the PDF.
+Extract the following keys:
 
 {
+  // From WisdomTree Dashboard
   "hy_spread_current": float, // High Yield Spread (e.g. 2.84)
-  "hy_spread_median": float, // Historical Median HY Spread (if available)
+  "hy_spread_median": float, // Historical Median HY Spread
   "forward_pe_current": float, // S&P 500 Forward P/E
   "forward_pe_median": float, // S&P 500 Forward P/E Median
   "real_yield_10y": float, // 10-Year Real Yield (TIPS)
   "inflation_expectations_5y5y": float, // 5y5y Forward Inflation Expectation
   "yield_10y": float, // 10-Year Treasury Nominal Yield
   "yield_2y": float, // 2-Year Treasury Nominal Yield
-  "interest_coverage_small_cap": float // S&P 600 Interest Coverage Ratio
+  "interest_coverage_small_cap": float, // S&P 600 Interest Coverage Ratio
+  
+  // From CME Section 01 Report
+  "cme_total_volume": int, // Total Exchange Volume (Combined Total)
+  "cme_total_open_interest": int // Total Open Interest (Combined Total)
 }
 """
 
@@ -65,7 +73,7 @@ Ground Truth Data:
 
 Format Constraints:
 Length: Total output must be 700–1,000 words.
-Tables: The "Dashboard Scoreboard" is the only table allowed.
+Tables: The "Dashboard Scoreboard" is the only table allowed. 
 formatting: Use '###' for all section headers.
 
 Output Structure:
@@ -105,16 +113,39 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 [Cross-Asset Confirmation, Risk Rating, The Trade, Triggers]
 """
 
-def download_pdf(url, filename):
-    print(f"Downloading PDF from {url}...")
-    response = requests.get(url)
-    response.raise_for_status()
-    with open(filename, "wb") as f:
-        f.write(response.content)
-    print("Download complete.")
+def download_pdfs(sources):
+    paths = {}
+    for name, url in sources.items():
+        print(f"Downloading {name} from {url}...")
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            filename = f"{name}.pdf"
+            with open(filename, "wb") as f:
+                f.write(response.content)
+            paths[name] = filename
+            print(f"Downloaded {filename}.")
+        except Exception as e:
+            print(f"Error downloading {name}: {e}")
+    return paths
+
+def fetch_live_data():
+    print("Fetching live market data (fallback)...")
+    data = {}
+    try:
+        # Fetch VIX
+        vix = yf.Ticker("^VIX")
+        hist = vix.history(period="1d")
+        if not hist.empty:
+            data['vix_index'] = round(hist['Close'].iloc[-1], 2)
+            print(f"Live VIX: {data['vix_index']}")
+    except Exception as e:
+        print(f"Error fetching live data: {e}")
+    return data
 
 def pdf_to_images(pdf_path):
-    print(f"Converting PDF to images for Vision...")
+    print(f"Converting {pdf_path} to images for Vision...")
     doc = fitz.open(pdf_path)
     images = []
     # Production: Limit to first 25 pages (skipping glossary/legal)
@@ -129,8 +160,6 @@ def pdf_to_images(pdf_path):
 
 # --- Deterministic Scoring Logic ---
 
-import math
-
 def calculate_deterministic_scores(extracted_data):
     print("Calculating deterministic scores...")
     scores = {}
@@ -143,7 +172,6 @@ def calculate_deterministic_scores(extracted_data):
         real_yield = data.get('real_yield_10y')
         
         if hy_spread is not None and real_yield is not None:
-            # Logic: ... (Same as before)
             median_spread = 4.5
             if hy_spread <= 0: hy_spread = 0.01 
             spread_component = 5.0 + (math.log(median_spread / hy_spread, 2) * 3.0)
@@ -241,7 +269,7 @@ def calculate_deterministic_scores(extracted_data):
     print(f"Calculated Scores: {scores}")
     return scores, details
 
-def extract_metrics_gemini(pdf_path):
+def extract_metrics_gemini(pdf_paths):
     print("Extracting Ground Truth Data with Gemini...")
     if not AI_STUDIO_API_KEY: return {}
 
@@ -249,10 +277,16 @@ def extract_metrics_gemini(pdf_path):
     model = genai.GenerativeModel(GEMINI_MODEL)
     
     try:
-        sample_pdf = genai.upload_file(pdf_path, mime_type="application/pdf")
-        response = model.generate_content([EXTRACTION_PROMPT, sample_pdf])
+        content = [EXTRACTION_PROMPT]
+        # Upload all PDFs
+        for name, path in pdf_paths.items():
+            print(f"Uploading {name} ({path})...")
+            f = genai.upload_file(path, mime_type="application/pdf")
+            content.append(f"Document: {name}")
+            content.append(f)
+            
+        response = model.generate_content(content)
         
-        # Clean response to get pure JSON
         text = response.text.replace("```json", "").replace("```", "").strip()
         data = json.loads(text)
         print(f"Extracted Data: {data}")
@@ -263,13 +297,26 @@ def extract_metrics_gemini(pdf_path):
 
 # --- Summarization ---
 
-def summarize_openrouter(pdf_path, ground_truth):
+def summarize_openrouter(pdf_paths, ground_truth):
     print(f"Summarizing with OpenRouter ({OPENROUTER_MODEL})...")
     if not OPENROUTER_API_KEY: return "Error: Key missing"
     
-    images = pdf_to_images(pdf_path)
+    # Process images for ALL PDFs
+    images = []
+    # Only prioritize WisdomTree visuals for summarization context if cost/time is concern,
+    # but for completeness, we can send all.
+    # Note: Nemotron might struggle with >10 pages. 
+    # Let's prioritize 'wisdomtree' then 'cme_vol'.
     
-    # Inject Ground Truth into Prompt
+    # Logic: Convert WisdomTree first
+    if "wisdomtree" in pdf_paths:
+        images.extend(pdf_to_images(pdf_paths["wisdomtree"]))
+    
+    # Then CME (limit pages to first 1 since it's a summary sheet)
+    if "cme_vol" in pdf_paths:
+        cme_images = pdf_to_images(pdf_paths["cme_vol"])
+        images.extend(cme_images[:1]) # Just the first page
+    
     formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(ground_truth_json=json.dumps(ground_truth, indent=2))
     
     content_list = [{"type": "text", "text": formatted_prompt}]
@@ -281,8 +328,8 @@ def summarize_openrouter(pdf_path, ground_truth):
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://github.com/jpeirce/daily-wisdomtree",
-        "X-Title": "WisdomTree Daily Summary",
+        "HTTP-Referer": "https://github.com/jpeirce/daily-macro-summary",
+        "X-Title": "Daily Macro Summary",
         "Content-Type": "application/json"
     }
     body = {
@@ -298,41 +345,36 @@ def summarize_openrouter(pdf_path, ground_truth):
     except Exception as e:
         return f"OpenRouter Error: {e}"
 
-def summarize_gemini(pdf_path, ground_truth):
+def summarize_gemini(pdf_paths, ground_truth):
     print(f"Summarizing with Gemini ({GEMINI_MODEL})...")
     if not AI_STUDIO_API_KEY: return "Error: Key missing"
 
     genai.configure(api_key=AI_STUDIO_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
     
-    # Inject Ground Truth
     formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(ground_truth_json=json.dumps(ground_truth, indent=2))
     
+    content = [formatted_prompt]
     try:
-        sample_pdf = genai.upload_file(pdf_path, mime_type="application/pdf")
-        response = model.generate_content([formatted_prompt, sample_pdf])
+        for name, path in pdf_paths.items():
+            f = genai.upload_file(path, mime_type="application/pdf")
+            content.append(f"Document: {name}")
+            content.append(f)
+            
+        response = model.generate_content(content)
         return response.text
     except Exception as e:
         return f"Gemini Error: {e}"
 
 def clean_llm_output(text):
     text = text.strip()
-    if text.startswith("```markdown"):
-        text = text[11:]
-    elif text.startswith("```"):
-        text = text[3:]
-    if text.endswith("```"):
-        text = text[:-3]
+    if text.startswith("```markdown"): text = text[11:]
+    elif text.startswith("```"): text = text[3:]
+    if text.endswith("```"): text = text[:-3]
     return text.strip()
 
 def get_score_color(category, score):
-    # Logic: Define what is "Good" (Green) vs "Bad" (Red)
-    # High Score (8-10) = Intense. Low Score (0-3) = Weak.
-    
-    # Categories where High = Risk/Bad (Red)
     high_risk_categories = ["Inflation Pressure", "Credit Stress", "Valuation Risk"]
-    
-    # Categories where High = Good/Bullish (Green)
     high_good_categories = ["Growth Impulse", "Liquidity Conditions", "Risk Appetite"]
     
     if category in high_risk_categories:
@@ -343,7 +385,7 @@ def get_score_color(category, score):
         if score >= 7: return "#27ae60" # Green (Strong)
         if score <= 4: return "#e74c3c" # Red (Weak)
         
-    return "#2c3e50" # Default Dark Blue/Black
+    return "#2c3e50" 
 
 def generate_html(today, summary_or, summary_gemini, scores, details):
     print("Generating HTML report...")
@@ -353,8 +395,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     html_or = markdown.markdown(summary_or, extensions=['tables'])
     html_gemini = markdown.markdown(summary_gemini, extensions=['tables'])
     
-    # Format scores for display with Colors and Confidence
-    score_html = "<ul style='list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 15px;'">
+    score_html = "<ul style='list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 15px;">
     for k, v in scores.items():
         color = get_score_color(k, v)
         detail_text = details.get(k, "Unknown")
@@ -362,7 +403,6 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
         if "Default" in detail_text or "Error" in detail_text:
             warning = " <span title='" + detail_text + "' style='cursor: help;'>⚠️</span>"
         else:
-            # Add checkmark for calculated
              warning = " <span title='" + detail_text + "' style='cursor: help; opacity: 0.5;'>✅</span>"
 
         score_html += f"<li style='background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1 0 140px; text-align: center; border-left: 5px solid {color};'><strong>{k}</strong>{warning}<br><span style='font-size: 1.5em; color: {color}; font-weight: bold;'>{v}/10</span></li>"
@@ -383,6 +423,9 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     .algo-box { background: #e8f6f3; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #d1f2eb; }
     """
     
+    # We can add links to CME pdfs too if desired, but for now just Main
+    main_pdf_url = PDF_SOURCES['wisdomtree']
+    
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -395,10 +438,10 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     <body>
         <h1>Daily Macro Summary ({today})</h1>
         <div style="text-align: center; margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em; font-style: italic;">
-            This is an independently generated summary of the publicly available WisdomTree Daily Dashboard. Not affiliated with WisdomTree Investments.
+            This is an independently generated summary of the publicly available WisdomTree Daily Dashboard and CME Data. Not affiliated with WisdomTree or CME.
         </div>
         <div class="pdf-link">
-            <a href="{PDF_URL}" target="_blank">📄 View Original PDF</a>
+            <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
         </div>
         
         <div class="algo-box">
@@ -451,41 +494,25 @@ def send_email(subject, body_markdown, pages_url):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-def fetch_live_data():
-    print("Fetching live market data (fallback)...")
-    data = {}
-    try:
-        # Fetch VIX
-        vix = yf.Ticker("^VIX")
-        hist = vix.history(period="1d")
-        if not hist.empty:
-            data['vix_index'] = round(hist['Close'].iloc[-1], 2)
-            print(f"Live VIX: {data['vix_index']}")
-    except Exception as e:
-        print(f"Error fetching live data: {e}")
-    return data
-
 def main():
     today = datetime.now().strftime("%Y-%m-%d")
-    pdf_path = "daily-dashboard.pdf"
     
     try:
-        download_pdf(PDF_URL, pdf_path)
+        pdf_paths = download_pdfs(PDF_SOURCES)
     except Exception as e:
-        print(f"Error fetching PDF: {e}")
+        print(f"Error fetching PDFs: {e}")
         return
 
     # Phase 1: Ground Truth Extraction
     extracted_metrics = {}
     algo_scores = {}
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        extracted_metrics = extract_metrics_gemini(pdf_path)
+        extracted_metrics = extract_metrics_gemini(pdf_paths)
     
     # Fetch Live Fallbacks (VIX)
     live_metrics = fetch_live_data()
     
-    # Merge (PDF takes precedence usually, but VIX is often missing from PDF)
-    # If PDF has null for a key, allow live data to fill it.
+    # Merge
     for k, v in live_metrics.items():
         if k not in extracted_metrics or extracted_metrics[k] is None:
             extracted_metrics[k] = v
@@ -502,9 +529,9 @@ def main():
     summary_gemini = "Gemini summary skipped."
 
     if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
-        summary_or = summarize_openrouter(pdf_path, ground_truth_context)
+        summary_or = summarize_openrouter(pdf_paths, ground_truth_context)
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        summary_gemini = summarize_gemini(pdf_path, ground_truth_context)
+        summary_gemini = summarize_gemini(pdf_paths, ground_truth_context)
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
