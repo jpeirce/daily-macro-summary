@@ -4,12 +4,12 @@ An automated macro strategist that extracts, scores, and summarizes financial da
 
 The system uses a **Three-Pass Intelligence Architecture** to ensure accuracy and objectivity:
 
-1.  **Extraction (Pass 1 - Vision):** Uses **Gemini 3 Pro** to extract raw numerical data (Spreads, P/E Ratios, Yields, CME Volume/OI) from visual charts and dense tables.
+1.  **Extraction (Pass 1 - Vision):** Uses **Gemini 3 Pro Preview** to extract raw numerical data (Spreads, P/E Ratios, Yields, CME Volume/OI) from visual charts and dense tables.
 2.  **Ground Truth Engine (Python):**
     *   **Deterministic Scoring:** Calculates scores (0-10) for Liquidity, Valuation, etc., using fixed financial formulas.
     *   **Live Trend Analysis:** Uses `yfinance` to fetch real-time S&P 500 data, calculating a robust 21-trading-day trend to bypass stale PDF charts.
     *   **Event Calendar:** Detects Monthly OPEX, Triple Witching, and Month-End rebalancing via a deterministic rules engine + manual overrides.
-3.  **Summarization (Pass 2 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to Gemini 3 Pro. Strict **Invariant Gates** and **Event Risk Gates** mandate specific phrasing and confidence downgrades based on the market regime.
+3.  **Summarization (Pass 2 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to Gemini 3 Pro Preview. Strict **Invariant Gates** and **Event Risk Gates** mandate specific phrasing and confidence downgrades based on the market regime.
 
 ## 🚀 Features
 
@@ -37,7 +37,7 @@ Required for the GitHub Actions pipeline:
 ### Configuration
 Controlled via `.github/workflows/summary.yml`:
 *   `SUMMARIZE_PROVIDER`: Set to `GEMINI` (default), `OPENROUTER`, or `ALL`.
-*   `GEMINI_MODEL`: Set to `gemini-3-pro`.
+*   `GEMINI_MODEL`: Set to `gemini-3-pro-preview`.
 
 ## 📊 Benchmark Arena
 The `benchmark` branch allows testing the summary logic against 8+ different models (Claude, GPT-4o, etc.) without Ground Truth constraints to measure raw reasoning performance.

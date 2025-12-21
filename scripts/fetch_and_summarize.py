@@ -29,7 +29,7 @@ PDF_SOURCES = {
     "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf"
 }
 OPENROUTER_MODEL = "openai/gpt-5.2" 
-GEMINI_MODEL = "gemini-3-pro" 
+GEMINI_MODEL = "gemini-3-pro-preview" 
 
 # --- Prompts ---
 
