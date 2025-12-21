@@ -608,7 +608,7 @@ def clean_llm_output(text, cme_signals=None):
     # Define color-coded badges for common signal keywords
     badges = {
         r"\bDirectional\b": "badge-blue",
-        r"\bHedging/Vol\b": "badge-orange",
+        r"\bHedging[/-]Vol\b": "badge-orange",
         r"\bLow Signal / Noise\b": "badge-gray",
         r"\bBullish\b": "badge-green",
         r"\bBearish\b": "badge-red",
@@ -617,7 +617,8 @@ def clean_llm_output(text, cme_signals=None):
         r"\bFlat\b": "badge-gray",
         r"\bBalanced\b": "badge-blue",
         r"\bFresh\b": "badge-green",
-        r"\bStale\b": "badge-red"
+        r"\bStale\b": "badge-red",
+        r"\bUnknown\b": "badge-gray"
     }
     for pattern, css_class in badges.items():
         text = re.sub(pattern, f'<span class="badge {css_class}">\\g<0></span>', text, flags=re.IGNORECASE)
