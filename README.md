@@ -36,7 +36,7 @@ Required for the GitHub Actions pipeline:
 
 ### Configuration
 Controlled via `.github/workflows/summary.yml`:
-*   `SUMMARIZE_PROVIDER`: Set to `GEMINI` (default), `OPENROUTER`, or `ALL`.
+*   `SUMMARIZE_PROVIDER`: Set to `GEMINI` (default), `OPENROUTER`, or `ALL` (enables side-by-side comparison in the HTML report).
 *   `GEMINI_MODEL`: Set to `gemini-3-pro-preview`.
 
 ## 📊 Benchmark Arena
