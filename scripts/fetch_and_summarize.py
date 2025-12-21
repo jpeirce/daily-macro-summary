@@ -544,7 +544,7 @@ def clean_llm_output(text):
     if text.endswith("```"): text = text[:-3]
     
     # Post-generation validator for banned terms
-    banned_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|institutional|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?)\b", re.IGNORECASE)
+    banned_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|institutional|institutional flows?|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?)\b", re.IGNORECASE)
     
     if banned_pattern.search(text):
         print("Warning: Banned terms found in LLM output. Normalizing...")
