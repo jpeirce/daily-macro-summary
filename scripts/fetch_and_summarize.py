@@ -124,29 +124,15 @@ YOU MUST adhere to these flags. Do not attempt to recalculate them.
     *   Direction MUST be "Unknown".
     *   You MUST explicitly state: "Signal is below noise threshold."
 
-# === BLOCK 2: PRICE TREND & STALENESS CHECK ===
+# === BLOCK 2: VISUAL EXTRACTION INSTRUCTIONS ===
 
-### 0. Visual Data Extraction (Internal Logic)
-1. **Scan CME Section 01 (Separately):** Confirm the extracted values match the Ground Truth JSON.
-2. **Scan WisdomTree PDF (Price Direction & Freshness):**
-   * **Rates:** Check "Treasury Yields" Table (Pg 1). Did 10Y Yields rise (Price Down) or fall (Price Up)?
-3. **Construct The Verdicts:**
-   * *Signal Quality:* Use the provided signal from Ground Truth.
-   * *Direction:* [Bullish / Bearish / Balanced / Unknown]
-   * *Trend Status:* Use the provided trend from Ground Truth.
+### 0. Visual Data Validation
+1. **Confirm Extracted Values:** Quickly verify that the provided Ground Truth JSON aligns with the visual evidence in the PDF pages.
+2. **Rates Focus:** Check "Treasury Yields" Table (Pg 1) to cross-reference yield moves with CME positioning.
 
 **OUTPUT INSTRUCTION:**
-Print the **DATA VERIFICATION** block below first (exactly as shown). **THEN** continue with the Final Output Structure (Scoreboard, Executive Takeaway, etc.).
-
-> **DATA VERIFICATION:**
-> * **Event Flags:** Today: [List flags] | Recent: [List flags]
-> * **Invariant Check:** IF Signal != "Directional" THEN Direction = "Unknown".
-> * **CME Provenance:** Bulletin Date: [Quote `cme_bulletin_date`] | Total Volume: [Val] | Total OI: [Val]
-> * **CME Extraction Note:** CME S01 extracted from page 1; if values are null, CME is unavailable.
-> * **Date Check:** Report Date: [Date] | SPX Trend Source: [yfinance/PDF]
-> * **Trend Audit:** [Quote `sp500_trend_audit` here if yfinance used, else "PDF Chart Analysis"]
-> * **Equities:** Signal: [Label] | Trend Status: [Status] | Direction: [Status]
-> * **Rates:** Signal: [Label] | Direction: [Status]
+Do NOT output a "DATA VERIFICATION" block; one will be prepended automatically by the system using deterministic Python logic. 
+Proceed directly to the Final Output Structure (Scoreboard, Executive Takeaway, etc.).
 
 # === BLOCK 3: FINAL OUTPUT STRUCTURE ===
 
@@ -335,6 +321,23 @@ def determine_signal(futures_delta, options_delta, noise_threshold=50000):
         return {"signal_quality": "Hedging-Vol", "direction_allowed": False}
     else:
         return {"signal_quality": "Directional", "direction_allowed": True}
+
+def generate_verification_block(effective_date, extracted_metrics, cme_signals, event_context):
+    eq_sig = cme_signals.get('equity', {})
+    rt_sig = cme_signals.get('rates', {})
+    
+    def fmt_val(v): return f"{v:,}" if isinstance(v, int) else str(v)
+
+    block = f"""
+> **DATA VERIFICATION (DETERMINISTIC):**
+> * **Event Flags:** Today: {event_context.get('flags_today', [])} | Recent: {event_context.get('flags_recent', [])}
+> * **CME Provenance:** Bulletin Date: "{extracted_metrics.get('cme_bulletin_date', 'Unknown')}" | Total Volume: {fmt_val(extracted_metrics.get('cme_total_volume', 'N/A'))} | Total OI: {fmt_val(extracted_metrics.get('cme_total_open_interest', 'N/A'))}
+> * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
+> * **Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
+> * **Equities:** Signal: {eq_sig.get('signal_quality', 'Unknown')} | Trend Status: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Direction Allowed: {eq_sig.get('direction_allowed', False)}
+> * **Rates:** Signal: {rt_sig.get('signal_quality', 'Unknown')} | Direction Allowed: {rt_sig.get('direction_allowed', False)}
+"""
+    return block
 
 def calculate_deterministic_scores(extracted_data):
     print("Calculating deterministic scores...")
@@ -574,6 +577,36 @@ def clean_llm_output(text, cme_signals=None):
     
     # Pass 3: Targeted Directional Leakage Validator
     if cme_signals:
+        eq_sig_val = cme_signals.get('equity', {}).get('signal_quality', 'Unknown')
+        rt_sig_val = cme_signals.get('rates', {}).get('signal_quality', 'Unknown')
+        
+        # 3a. Force-Overwrite "Signal:" lines with Deterministic Truth
+        lines = text.split('\n')
+        new_lines = []
+        current_section = "Unknown"
+        
+        for line in lines:
+            # Detect Section
+            if "Rates & Curve Profile" in line or "Positioning Check" in line:
+                current_section = "Rates"
+            elif "Engine Room" in line or "Market Breadth" in line:
+                current_section = "Equities"
+            elif "Executive Takeaway" in line:
+                current_section = "Summary"
+            
+            # Detect Signal Line
+            if "Signal:" in line:
+                if current_section == "Rates":
+                    prefix = line.split("Signal:")[0]
+                    line = f"{prefix}Signal: {rt_sig_val}"
+                elif current_section == "Equities":
+                    prefix = line.split("Signal:")[0]
+                    line = f"{prefix}Signal: {eq_sig_val}"
+            
+            new_lines.append(line)
+        
+        text = "\n".join(new_lines)
+
         eq_allowed = cme_signals.get('equity', {}).get('direction_allowed', True)
         rt_allowed = cme_signals.get('rates', {}).get('direction_allowed', True)
         
@@ -639,8 +672,14 @@ def get_score_color(category, score):
         
     return "#2c3e50" 
 
-def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None):
+def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block=""):
     print("Generating HTML report...")
+    
+    # Prepend Verification Block to the raw text BEFORE markdown conversion
+    if verification_block:
+        summary_or = verification_block + "\n\n" + summary_or
+        summary_gemini = verification_block + "\n\n" + summary_gemini
+
     summary_or = clean_llm_output(summary_or, cme_signals)
     summary_gemini = clean_llm_output(summary_gemini, cme_signals)
     
@@ -906,6 +945,9 @@ def main():
     event_context = get_event_context(effective_date)
     print(f"Event Context (as of {effective_date}): {json.dumps(event_context, indent=2)}")
 
+    # Generate Deterministic Verification Block
+    verification_block = generate_verification_block(effective_date, extracted_metrics, ground_truth_context['cme_signals'], event_context)
+
     # Phase 2: Summarization
     summary_or = "OpenRouter summary skipped."
     summary_gemini = "Gemini summary skipped."
@@ -917,7 +959,7 @@ def main():
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
-    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'))
+    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block)
     
     # Email
     repo_name = GITHUB_REPOSITORY.split("/")[-1]
