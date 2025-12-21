@@ -26,7 +26,8 @@ GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary"
 
 PDF_SOURCES = {
     "wisdomtree": "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf",
-    "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf"
+    "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf",
+    "cme_sec09": "https://www.cmegroup.com/daily_bulletin/current/Section09_Interest_Rate_Futures.pdf"
 }
 OPENROUTER_MODEL = "openai/gpt-5.2" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
@@ -37,6 +38,20 @@ NOISE_THRESHOLDS = {
     "rates": 75000,
     "fx": 25000
 }
+
+# --- Helpers ---
+
+def parse_int_token(tok):
+    if not tok: return None
+    t = str(tok).strip().replace(",", "")
+    if t in {"", "----", "—", "null", "None"}:
+        return None
+    if t.upper() == "UNCH":
+        return 0
+    try:
+        return int(t)
+    except:
+        return None
 
 # --- Prompts ---
 
@@ -89,6 +104,34 @@ Extract the following keys:
   
   "cme_equity_options_oi_change": int, // Table "OPTIONS ONLY" -> Row "EQUITY INDEX" -> Column "NET CHGE OI"
   "cme_equity_options_audit_label": string  // The exact row label matched (should be "EQUITY INDEX")
+}
+"""
+
+EXTRACTION_PROMPT_SEC09 = """
+You are a precision data extractor for CME Section 09 (Interest Rate Futures).
+Your task is to extract row-level totals for specific Treasury Futures tenors.
+
+ANCHOR RULES:
+1. Locate the exact row labels specified below (e.g., "TOTAL 2-YR NOTE FUTURES").
+2. From that row, extract the LAST 4 numeric-ish tokens.
+   - These correspond to columns: [RTH VOLUME] [GLOBEX VOLUME] [OPEN INTEREST] [NET CHGE OI]
+   - "UNCH" is a valid numeric token (means 0).
+   - "----" or empty is null.
+
+JSON OUTPUT SCHEMA:
+{
+  "cme_section09": {
+    "bulletin_date": "YYYY-MM-DD",
+    "totals": {
+      "2y":   {"row_label": "TOTAL 2-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "3y":   {"row_label": "TOTAL 3-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "5y":   {"row_label": "TOTAL 5-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "10y":  {"row_label": "TOTAL 10-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "tn":   {"row_label": "TOTAL TN FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "30y":  {"row_label": "TOTAL 30Y BOND FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
+      "ultra":{"row_label": "TOTAL ULTRA T-BND FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string}
+    }
+  }
 }
 """
 
@@ -559,15 +602,97 @@ def calculate_deterministic_scores(extracted_data):
     print(f"Calculated Scores: {scores}")
     return scores, details
 
-def extract_metrics_gemini(pdf_paths):
+def process_cme_sec09(raw_data):
+    """
+    Process raw CME Section 09 extraction into a deterministic rates curve object.
+    """
+    if not raw_data or "cme_section09" not in raw_data:
+        return {}
+
+    sec09 = raw_data["cme_section09"]
+    totals = sec09.get("totals", {})
+    
+    # 1. Normalize & Cast
+    processed_tenors = {}
+    missing_tenors = []
+    
+    # Tenor mapping for clean iteration
+    tenor_keys = ["2y", "3y", "5y", "10y", "tn", "30y", "ultra"]
+    
+    for k in tenor_keys:
+        if k not in totals:
+            missing_tenors.append(k)
+            continue
+            
+        row = totals[k]
+        # Parse fields
+        rth = parse_int_token(row.get("rth_volume")) or 0
+        globex = parse_int_token(row.get("globex_volume")) or 0
+        oi = parse_int_token(row.get("open_interest"))
+        change = parse_int_token(row.get("oi_change")) or 0
+        
+        processed_tenors[k] = {
+            "total_volume": rth + globex,
+            "open_interest": oi,
+            "oi_change": change
+        }
+
+    # 2. Clusters
+    clusters = {
+        "Short End": ["2y", "3y"],
+        "Belly": ["5y"],
+        "Tens": ["10y", "tn"],
+        "Long End": ["30y", "ultra"]
+    }
+    
+    cluster_stats = {}
+    for name, tenors in clusters.items():
+        abs_sum = 0
+        signed_sum = 0
+        for t in tenors:
+            if t in processed_tenors:
+                chg = processed_tenors[t]["oi_change"]
+                abs_sum += abs(chg)
+                signed_sum += chg
+        cluster_stats[name] = {"abs_oi_change": abs_sum, "net_oi_change": signed_sum}
+
+    # 3. Dominance
+    # Find cluster with max absolute OI change
+    active_cluster = max(cluster_stats, key=lambda k: cluster_stats[k]["abs_oi_change"]) if cluster_stats else "N/A"
+    
+    # Find single most active tenor
+    active_tenor = max(processed_tenors, key=lambda k: abs(processed_tenors[k]["oi_change"])) if processed_tenors else "N/A"
+    
+    # Concentration (Top 2 tenors share of total abs delta)
+    total_abs_delta = sum(abs(t["oi_change"]) for t in processed_tenors.values())
+    top2_abs = sum(sorted([abs(t["oi_change"]) for t in processed_tenors.values()], reverse=True)[:2])
+    concentration = (top2_abs / total_abs_delta) if total_abs_delta > 0 else 0.0
+
+    return {
+        "tenors": processed_tenors,
+        "clusters": cluster_stats,
+        "dominance": {
+            "active_cluster": active_cluster,
+            "active_tenor": active_tenor,
+            "concentration": concentration
+        },
+        "quality": {
+            "missing_tenors": missing_tenors,
+            "is_complete": len(missing_tenors) <= 2
+        }
+    }
+
+def extract_metrics_gemini(pdf_paths, prompt_override=None):
     print("Extracting Ground Truth Data with Gemini...")
-    if not AI_STUDIO_API_KEY: return {}
+    if not AI_STUDIO_API_KEY: 
+        print("Error: AI_STUDIO_API_KEY not found. Skipping PDF extraction.")
+        return {}
 
     genai.configure(api_key=AI_STUDIO_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
     
     try:
-        content = [EXTRACTION_PROMPT]
+        content = [prompt_override if prompt_override else EXTRACTION_PROMPT]
         # Upload all PDFs
         for name, path in pdf_paths.items():
             print(f"Uploading {name} ({path})...")
@@ -582,7 +707,7 @@ def extract_metrics_gemini(pdf_paths):
         print(f"Extracted Data: {data}")
         return data
     except Exception as e:
-        print(f"Extraction failed: {e}")
+        print(f"Extraction failed (CME/WisdomTree Source): {e}")
         return {}
 
 # --- Summarization ---
@@ -791,7 +916,7 @@ def get_score_color(category, score):
         
     return "#2c3e50" 
 
-def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None):
+def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None, rates_curve=None):
     print("Generating HTML report...")
     
     # Helper to badge chips
@@ -907,6 +1032,41 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     </div>
     """
 
+    # Construct Rates Curve Panel
+    rates_curve_html = ""
+    if rates_curve and rates_curve.get("clusters"):
+        clusters = rates_curve["clusters"]
+        dom = rates_curve.get("dominance", {})
+        
+        # Color helper
+        def get_curve_color(net_chg):
+            if net_chg > 0: return "color: #27ae60;"
+            if net_chg < 0: return "color: #e74c3c;"
+            return "color: #7f8c8d;"
+
+        rows = ""
+        for name in ["Short End", "Belly", "Tens", "Long End"]:
+            data = clusters.get(name, {})
+            net = data.get("net_oi_change", 0)
+            rows += f"""
+            <div class="curve-item">
+                <span class="curve-label">{name}</span>
+                <span class="curve-value" style="{get_curve_color(net)}">{d(net)}</span>
+            </div>
+            """
+            
+        rates_curve_html = f"""
+        <div class="rates-curve-panel">
+            <div class="curve-header">
+                <strong>Rates Curve Structure</strong>
+                <span style="font-size: 0.85em; color: #666;">Active: {dom.get('active_cluster')} ({dom.get('active_tenor')})</span>
+            </div>
+            <div class="curve-grid">
+                {rows}
+            </div>
+        </div>
+        """
+
     # Build columns conditionally
     columns_html = ""
     if "Gemini summary skipped" not in summary_gemini:
@@ -914,6 +1074,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <div class="column">
                 <h2>🤖 Gemini ({GEMINI_MODEL})</h2>
                 {signals_panel_html}
+                {rates_curve_html}
                 {html_gemini}
             </div>
         """
@@ -923,6 +1084,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <div class="column">
                 <h2>🧠 OpenRouter ({OPENROUTER_MODEL})</h2>
                 {signals_panel_html}
+                {rates_curve_html}
                 {html_or}
             </div>
         """
@@ -1251,9 +1413,22 @@ def main():
 
     # Phase 1: Ground Truth Extraction
     extracted_metrics = {}
+    sec09_raw = {}
     algo_scores = {}
+    
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        extracted_metrics = extract_metrics_gemini(pdf_paths)
+        # 1. Main Extraction (WisdomTree + CME Vol)
+        main_pdfs = {k: v for k, v in pdf_paths.items() if k in ['wisdomtree', 'cme_vol']}
+        extracted_metrics = extract_metrics_gemini(main_pdfs)
+        
+        # 2. Section 09 Extraction (CME Rates Curve)
+        sec09_pdf = {k: v for k, v in pdf_paths.items() if k == 'cme_sec09'}
+        if sec09_pdf:
+            print("Extracting CME Section 09 (Rates Curve)...")
+            sec09_raw = extract_metrics_gemini(sec09_pdf, prompt_override=EXTRACTION_PROMPT_SEC09)
+    
+    # Process Curve Data
+    cme_rates_curve = process_cme_sec09(sec09_raw)
     
     # Fetch Live Fallbacks (VIX)
     live_metrics = fetch_live_data()
@@ -1285,7 +1460,8 @@ def main():
         "cme_signals": {
             "equity": equity_signal,
             "rates": rates_signal
-        }
+        },
+        "cme_rates_curve": cme_rates_curve
     }
     
     # Event Context - Anchored to effective market date
@@ -1307,7 +1483,7 @@ def main():
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
-    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context)
+    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context, cme_rates_curve)
     
     # Email
     repo_name = GITHUB_REPOSITORY.split("/")[-1]
