@@ -187,8 +187,9 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 [Data, Implication]
 *Synthesize the CME Image data. Check the Equity Index Futures vs. Options OI split. Is the leverage expansion driven by directional bets (Futures) or hedging (Options)?*
 
-### 7. Valuation & "Smart Money"
+### 7. Valuation & Positioning
 [Data, International, Implication]
+*Constraint: Do NOT use terms like "Smart Money", "Whales", or "Insiders". Focus on structural positioning (hedging vs. direction).*
 
 ### 8. Conclusion & Trade Tilt
 [Cross-Asset Confirmation, Risk Rating, The Trade, Triggers]
