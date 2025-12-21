@@ -544,13 +544,22 @@ def clean_llm_output(text):
     if text.endswith("```"): text = text[:-3]
     
     # Post-generation validator for banned terms
-    banned_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|institutional|institutional flows?|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?)\b", re.IGNORECASE)
     
-    if banned_pattern.search(text):
-        print("Warning: Banned terms found in LLM output. Normalizing...")
-        # Replace matches with neutral term
-        text = banned_pattern.sub("market participants", text)
-        text += "\n\n*(Note: Language normalization applied to remove attribution)*"
+    # Pass 1: Adjectives (e.g. "institutional flows" -> "market-participant flows")
+    adj_pattern = re.compile(r"\b(institutional)\b", re.IGNORECASE)
+    if adj_pattern.search(text):
+        print("Warning: Banned adjective found. Normalizing...")
+        text = adj_pattern.sub("market-participant", text)
+        if "Language normalization applied" not in text:
+            text += "\n\n*(Note: Language normalization applied to remove attribution)*"
+
+    # Pass 2: Nouns (e.g. "whales sold" -> "market participants sold")
+    noun_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?)\b", re.IGNORECASE)
+    if noun_pattern.search(text):
+        print("Warning: Banned noun found. Normalizing...")
+        text = noun_pattern.sub("market participants", text)
+        if "Language normalization applied" not in text:
+            text += "\n\n*(Note: Language normalization applied to remove attribution)*"
         
     return text.strip()
 
@@ -634,6 +643,21 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
             <h3>🧮 Deterministic "Ground Truth" Scores (Python Calculated)</h3>
             {score_html}
             <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models below.</em></small>
+            
+            <details style="margin-top: 15px; cursor: pointer;">
+                <summary style="font-weight: bold; color: #3498db;">Show Calculation Formulas</summary>
+                <div style="margin-top: 10px; font-size: 0.9em; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <ul style="list-style-type: disc; padding-left: 20px;">
+                        <li><strong>Liquidity Conditions:</strong> 5.0 + (log2(4.5 / HY_Spread) * 3.0) - max(0, (Real_Yield_10Y - 1.5) * 2.0)</li>
+                        <li><strong>Valuation Risk:</strong> 5.0 + ((Forward_PE - 18.0) * 0.66)</li>
+                        <li><strong>Inflation Pressure:</strong> 5.0 + ((Inflation_Expectations_5y5y - 2.25) * 10.0)</li>
+                        <li><strong>Credit Stress:</strong> 2.0 + ((HY_Spread - 3.0) * 1.6) [Min 2.0]</li>
+                        <li><strong>Growth Impulse:</strong> 5.0 + ((Yield_10Y - Yield_2Y - 0.50) * 3.5)</li>
+                        <li><strong>Risk Appetite:</strong> 10.0 - ((VIX - 10.0) * 0.5)</li>
+                    </ul>
+                    <p style="margin-top: 5px; font-style: italic;">All scores are clamped between 0.0 and 10.0.</p>
+                </div>
+            </details>
         </div>
 
         <div class="container">

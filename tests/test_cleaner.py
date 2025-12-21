@@ -30,6 +30,18 @@ class TestCleaner(unittest.TestCase):
         self.assertNotIn("Institutions", clean_text)
         self.assertIn("market participants", clean_text)
 
+    def test_clean_institutional_flows(self):
+        text = "We are seeing strong institutional flows into equities."
+        clean_text = clean_llm_output(text)
+        self.assertIn("market-participant flows", clean_text)
+        self.assertIn("Language normalization applied", clean_text)
+
+    def test_clean_institutional_flows(self):
+        text = "We are seeing strong institutional flows into equities."
+        clean_text = clean_llm_output(text)
+        self.assertIn("market-participant flows", clean_text)
+        self.assertIn("Language normalization applied", clean_text)
+
 if __name__ == '__main__':
     unittest.main()
 
