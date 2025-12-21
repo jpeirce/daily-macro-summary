@@ -126,9 +126,9 @@ EVENT CONTEXT (Deterministic Flags):
 Signal Quality and Direction Allowed are precomputed deterministically in Python. 
 YOU MUST adhere to these flags. Do not attempt to recalculate them.
 
-*   **Equities Signal:** Provided in `cme_signals.equity.signal_quality`
+*   **Equities Signal:** Provided in `cme_signals.equity.signal_label`
 *   **Equities Direction Allowed:** Provided in `cme_signals.equity.direction_allowed`
-*   **Rates Signal:** Provided in `cme_signals.rates.signal_quality`
+*   **Rates Signal:** Provided in `cme_signals.rates.signal_label`
 *   **Rates Direction Allowed:** Provided in `cme_signals.rates.direction_allowed`
 
 **CRITICAL RULES:**
@@ -136,7 +136,7 @@ YOU MUST adhere to these flags. Do not attempt to recalculate them.
     *   The Direction for that asset MUST be "Unknown".
     *   Your narrative MUST remain neutral and non-directional. 
     *   BAN all directional terms: "Bullish", "Bearish", "Rally", "Selloff", "Conviction".
-2.  **IF `signal_quality` is "Noise":** 
+2.  **IF `signal_label` is "Low Signal / Noise":** 
     *   Direction MUST be "Unknown".
     *   You MUST explicitly state: "Signal is below noise threshold."
 
@@ -335,21 +335,49 @@ def pdf_to_images(pdf_path):
 # --- Deterministic Scoring Logic ---
 
 def determine_signal(futures_delta, options_delta, noise_threshold=50000):
+    # Default safe state
+    res = {
+        "signal_label": "Unknown",
+        "direction_allowed": False,
+        "noise_filtered": False,
+        "gate_reason": "Missing Data",
+        "futures_oi_delta": futures_delta,
+        "options_oi_delta": options_delta
+    }
+
     if futures_delta is None or options_delta is None:
-        return {"signal_quality": "Unknown", "direction_allowed": False}
+        return res
     
     fut_abs = abs(futures_delta)
     opt_abs = abs(options_delta)
     
     # 1. Noise Filter
     if max(fut_abs, opt_abs) < noise_threshold:
-        return {"signal_quality": "Noise", "direction_allowed": False}
+        res.update({
+            "signal_label": "Low Signal / Noise",
+            "direction_allowed": False,
+            "noise_filtered": True,
+            "gate_reason": f"Max delta ({max(fut_abs, opt_abs)}) < Threshold ({noise_threshold})"
+        })
+        return res
     
     # 2. The Gate (Dominance check)
     if opt_abs >= fut_abs:
-        return {"signal_quality": "Hedging-Vol", "direction_allowed": False}
+        res.update({
+            "signal_label": "Hedging-Vol",
+            "direction_allowed": False,
+            "noise_filtered": False,
+            "gate_reason": f"Options (|{options_delta}|) >= Futures (|{futures_delta}|)"
+        })
     else:
-        return {"signal_quality": "Directional", "direction_allowed": True}
+        res.update({
+            "signal_label": "Directional",
+            "direction_allowed": True,
+            "noise_filtered": False,
+            "gate_reason": f"Futures (|{futures_delta}|) > Options (|{options_delta}|)"
+        })
+        
+    return res
 
 def generate_verification_block(effective_date, extracted_metrics, cme_signals, event_context):
     eq_sig = cme_signals.get('equity', {})
@@ -358,7 +386,7 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
     def fmt_val(v): return f"{v:,}" if isinstance(v, int) else str(v)
     
     bps_change = extracted_metrics.get('ust10y_change_bps')
-    rates_text = f"Signal: {rt_sig.get('signal_quality', 'Unknown')}"
+    rates_text = f"Signal: {rt_sig.get('signal_label', 'Unknown')}"
     if bps_change is not None:
         rates_text += f" | 10Y Move: {bps_change:+.1f} bps (Live)"
 
@@ -372,7 +400,7 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
 > * **CME Audit Anchors:** Totals: "{extracted_metrics.get('cme_totals_audit_label', 'N/A')}" | Rates: "{extracted_metrics.get('cme_rates_futures_audit_label', 'N/A')}" | Equities: "{extracted_metrics.get('cme_equity_futures_audit_label', 'N/A')}"
 > * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
 > * **Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
-> * **Equities:** Signal: {eq_sig.get('signal_quality', 'Unknown')} | Trend Status: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Direction Allowed: {eq_sig.get('direction_allowed', False)}
+> * **Equities:** Signal: {eq_sig.get('signal_label', 'Unknown')} | Trend Status: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Direction Allowed: {eq_sig.get('direction_allowed', False)}
 > * **Rates:** {rates_text} | Direction Allowed: {rt_sig.get('direction_allowed', False)}
 </details>
 """
@@ -619,8 +647,8 @@ def clean_llm_output(text, cme_signals=None):
 
     # Pass 3: Targeted Directional Leakage Validator
     if cme_signals:
-        eq_sig_val = cme_signals.get('equity', {}).get('signal_quality', 'Unknown')
-        rt_sig_val = cme_signals.get('rates', {}).get('signal_quality', 'Unknown')
+        eq_sig_val = cme_signals.get('equity', {}).get('signal_label', 'Unknown')
+        rt_sig_val = cme_signals.get('rates', {}).get('signal_label', 'Unknown')
         
         # 3a. Force-Overwrite "Signal:" lines with Deterministic Truth
         lines = text.split('\n')
@@ -759,10 +787,17 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     if cme_signals:
         sig_html = "<div class='key-numbers' style='border-top: 4px solid #3498db;'>"
         for label, data in cme_signals.items():
-            quality = data.get('signal_quality', 'Unknown')
+            quality = data.get('signal_label', 'Unknown')
+            reason = data.get('gate_reason', '')
             allowed = "Allowed" if data.get('direction_allowed') else "Redacted"
             color = "#27ae60" if data.get('direction_allowed') else "#7f8c8d"
-            sig_html += f"<div class='key-number-item'><span class='key-number-label'>{label.upper()} SIGNAL</span><span class='key-number-value' style='color: {color};'>{quality}</span><small>Direction: {allowed}</small></div>"
+            
+            sig_html += f"""
+            <div class='key-number-item' title='{reason}'>
+                <span class='key-number-label'>{label.upper()} SIGNAL</span>
+                <span class='key-number-value' style='color: {color};'>{quality}</span>
+                <small style='font-size:0.7em; color:#999;'>{allowed}</small>
+            </div>"""
         sig_html += "</div>"
 
     # Generate Key Numbers Strip
