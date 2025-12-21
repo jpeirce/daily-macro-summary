@@ -9,7 +9,7 @@ The system uses a **Three-Pass Intelligence Architecture** to ensure accuracy an
     *   **Deterministic Scoring:** Calculates scores (0-10) for Liquidity, Valuation, etc., using fixed financial formulas.
     *   **Live Trend Analysis:** Uses `yfinance` to fetch real-time S&P 500 data, calculating a robust 21-trading-day trend to bypass stale PDF charts.
     *   **Event Calendar:** Detects Monthly OPEX, Triple Witching, and Month-End rebalancing via a deterministic rules engine + manual overrides.
-3.  **Summarization (Pass 2 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to Gemini 3 Pro Preview. Strict **Invariant Gates** and **Event Risk Gates** mandate specific phrasing and confidence downgrades based on the market regime.
+3.  **Summarization (Pass 3 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to an LLM to generate a strategic market outlook. Defaults to **Gemini 3 Pro Preview**, but can be configured to use **OpenRouter** models (or both for side-by-side comparison) via environment variables. Strict **Invariant Gates** and **Event Risk Gates** mandate specific phrasing and confidence downgrades based on the market regime.
 
 ## 🚀 Features
 
