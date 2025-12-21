@@ -34,19 +34,25 @@ def get_event_context(report_date_str, lookback_days=7):
 
     # Load manual calendar
     calendar_events = {}
+    manual_calendar_loaded = False
+    cal_path = os.path.join(os.path.dirname(__file__), 'event_calendar.json')
     try:
-        cal_path = os.path.join(os.path.dirname(__file__), 'event_calendar.json')
         with open(cal_path, 'r') as f:
             raw_cal = json.load(f)
             # Normalize flags on load
             for d, flags in raw_cal.items():
                 normalized = [NORM_MAP.get(f, f) for f in flags]
                 calendar_events[d] = normalized
+            manual_calendar_loaded = True
     except Exception as e:
         print(f"Warning: Could not load event_calendar.json: {e}")
 
     context = {
         "as_of": report_date_str,
+        "source": {
+            "manual_calendar_loaded": manual_calendar_loaded,
+            "cal_path": cal_path
+        },
         "flags_today": [],
         "flags_recent": [],
         "notes": {}
@@ -102,6 +108,9 @@ def get_event_context(report_date_str, lookback_days=7):
         "QUARTER_END": "Significant window dressing and rebalancing flows likely.",
         "FOMC": "Federal Reserve meeting; expect volatility.",
         "RUSSELL_REBALANCE": "High volume in small caps expected due to index reconstitution.",
+        "INDEX_REBALANCE": "Mechanical flows due to index weighting changes.",
+        "AUCTION_WEEK": "Treasury auction cycle; rates positioning may be hedge-related.",
+        "REFUNDING": "Quarterly refunding announcements; significant rates impact possible.",
         "CPI": "Consumer Price Index data release; high volatility expected.",
         "NFP": "Non-Farm Payrolls report; high volatility expected."
     }
