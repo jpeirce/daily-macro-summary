@@ -1074,6 +1074,27 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     except:
         pass
 
+    # WisdomTree Staleness Check
+    wt_staleness_flag = ""
+    try:
+        if wt_date_str != 'N/A':
+            # Parse WT format: "December 19, 2025" or "Dec 19, 2025"
+            clean_wt = wt_date_str.strip()
+            try:
+                wt_dt = datetime.strptime(clean_wt, "%B %d, %Y").date()
+            except:
+                wt_dt = datetime.strptime(clean_wt, "%b %d, %Y").date()
+                
+            eff_dt = datetime.strptime(today, "%Y-%m-%d").date()
+            days_diff = (eff_dt - wt_dt).days
+            
+            if days_diff > 3:
+                wt_staleness_flag = f' <span class="badge badge-red" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
+            else:
+                wt_staleness_flag = ' <span class="badge badge-green" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
+    except:
+        pass
+
     # Construct Event Callout
     event_callout_html = ""
     if event_context and event_context.get('flags_today'):
@@ -1120,7 +1141,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <div class="provenance-item">
                 <span class="provenance-label">Dates:</span>
                 <span title="CME Bulletin Date">CME: {cme_date_str}{cme_staleness_flag}</span>
-                <span title="WisdomTree Dashboard As-Of Date" style="margin-left: 10px; border-left: 1px solid #ddd; padding-left: 10px;">WT: {wt_date_str}</span>
+                <span title="WisdomTree Dashboard As-Of Date" style="margin-left: 10px; border-left: 1px solid #ddd; padding-left: 10px;">WT: {wt_date_str}{wt_staleness_flag}</span>
             </div>
             <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
                 <span class="provenance-label">Equities:</span>
