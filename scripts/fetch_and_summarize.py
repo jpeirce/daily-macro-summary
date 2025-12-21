@@ -852,7 +852,12 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     
     .container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
     .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); line-height: 1.75; }
-    .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
+    
+    /* Heading Normalization within Columns */
+    .column h1, .column h2 { font-size: 1.4em; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 0; color: #34495e; margin-bottom: 15px; }
+    .column h3 { font-size: 1.15em; color: #2c3e50; margin-top: 20px; margin-bottom: 10px; font-weight: 700; }
+    .column h4 { font-size: 1.05em; color: #555; margin-top: 15px; font-weight: 600; }
+    
     strong { font-weight: 600; color: #2c3e50; } /* Soften bold density */
     
     .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: #666; }
