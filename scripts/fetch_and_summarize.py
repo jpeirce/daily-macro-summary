@@ -13,6 +13,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 import time 
+from event_flags import get_event_context
 
 # Configuration
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -28,7 +29,7 @@ PDF_SOURCES = {
     "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf"
 }
 OPENROUTER_MODEL = "openai/gpt-5.2" 
-GEMINI_MODEL = "gemini-3-pro-preview" 
+GEMINI_MODEL = "gemini-3-pro" 
 
 # --- Prompts ---
 
@@ -86,6 +87,21 @@ CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores below. 
 
 Ground Truth Data (Use these scores exactly):
 {ground_truth_json}
+
+EVENT CONTEXT (Deterministic Flags):
+{event_context_json}
+
+# === BLOCK 0: EVENT RISK GATES ===
+
+*   **IF "TRIPLE_WITCHING" or "MONTHLY_OPEX" is present (Today or Recent):**
+    *   **DOWNGRADE** confidence on all Volume/OI interpretations.
+    *   **BAN** phrases like "aggressive conviction" or "strong directional positioning" unless supported by multiple non-expiry signals.
+    *   **REQUIRE** phrasing: "Expiry/roll effects may distort OI/volume."
+    *   **CITE** the specific flag when qualifying the signal.
+*   **IF "INDEX_REBALANCE" or "RUSSELL_REBALANCE" is present:**
+    *   Treat equity index futures flows as potentially mechanical.
+*   **IF "AUCTION_WEEK" or "REFUNDING" is present:**
+    *   Treat rates OI/volume spikes as potentially auction/hedge-related.
 
 # === BLOCK 1: CME ANALYTIC FRAMEWORK (Strict Signal Logic) ===
 
@@ -152,6 +168,7 @@ E. DIRECTIONAL INTERPRETATION (Only if Trend is Valid/Current + Directional Sign
 Print the **DATA VERIFICATION** block below first (exactly as shown). **THEN** continue with the Final Output Structure (Scoreboard, Executive Takeaway, etc.).
 
 > **DATA VERIFICATION:**
+> * **Event Flags:** Today: [List flags] | Recent: [List flags]
 > * **Invariant Check:** IF Signal != "Directional" THEN Direction = "Unknown".
 > * **CME Extraction Note:** CME S01 extracted from page 1; if values are null, CME is unavailable.
 > * **Date Check:** Report Date: [Date] | SPX Trend Source: [yfinance/PDF]
@@ -468,7 +485,7 @@ def extract_metrics_gemini(pdf_paths):
 
 # --- Summarization ---
 
-def summarize_openrouter(pdf_paths, ground_truth):
+def summarize_openrouter(pdf_paths, ground_truth, event_context):
     print(f"Summarizing with OpenRouter ({OPENROUTER_MODEL})...")
     if not OPENROUTER_API_KEY: return "Error: Key missing"
     
@@ -488,7 +505,10 @@ def summarize_openrouter(pdf_paths, ground_truth):
         cme_images = pdf_to_images(pdf_paths["cme_vol"])
         images.extend(cme_images[:1]) # Just the first page
     
-    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(ground_truth_json=json.dumps(ground_truth, indent=2))
+    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
+        ground_truth_json=json.dumps(ground_truth, indent=2),
+        event_context_json=json.dumps(event_context, indent=2)
+    )
     
     content_list = [{"type": "text", "text": formatted_prompt}]
     for img_b64 in images:
@@ -516,14 +536,17 @@ def summarize_openrouter(pdf_paths, ground_truth):
     except Exception as e:
         return f"OpenRouter Error: {e}"
 
-def summarize_gemini(pdf_paths, ground_truth):
+def summarize_gemini(pdf_paths, ground_truth, event_context):
     print(f"Summarizing with Gemini ({GEMINI_MODEL})...")
     if not AI_STUDIO_API_KEY: return "Error: Key missing"
 
     genai.configure(api_key=AI_STUDIO_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
     
-    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(ground_truth_json=json.dumps(ground_truth, indent=2))
+    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
+        ground_truth_json=json.dumps(ground_truth, indent=2),
+        event_context_json=json.dumps(event_context, indent=2)
+    )
     
     content = [formatted_prompt]
     try:
@@ -733,15 +756,19 @@ def main():
         "extracted_metrics": extracted_metrics,
         "calculated_scores": algo_scores
     }
+    
+    # Event Context
+    event_context = get_event_context(today)
+    print(f"Event Context: {json.dumps(event_context, indent=2)}")
 
     # Phase 2: Summarization
     summary_or = "OpenRouter summary skipped."
     summary_gemini = "Gemini summary skipped."
 
     if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
-        summary_or = summarize_openrouter(pdf_paths, ground_truth_context)
+        summary_or = summarize_openrouter(pdf_paths, ground_truth_context, event_context)
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        summary_gemini = summarize_gemini(pdf_paths, ground_truth_context)
+        summary_gemini = summarize_gemini(pdf_paths, ground_truth_context, event_context)
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
@@ -752,7 +779,12 @@ def main():
     owner_name = GITHUB_REPOSITORY.split("/")[0]
     pages_url = f"https://{owner_name}.github.io/{repo_name}/"
     
-    email_body = f"Check the attached report for today's summary.\n\nGround Truth Data: {json.dumps(algo_scores, indent=2)}"
+    full_audit_data = {
+        "ground_truth": ground_truth_context,
+        "event_context": event_context
+    }
+    
+    email_body = f"Check the attached report for today's summary.\n\nAudit Data: {json.dumps(full_audit_data, indent=2)}"
     send_email(f"Daily Macro Summary - {today}", email_body, pages_url)
 
 if __name__ == "__main__":
