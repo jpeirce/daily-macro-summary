@@ -594,7 +594,7 @@ def clean_llm_output(text, cme_signals=None):
             elif "Executive Takeaway" in line:
                 current_section = "Summary"
             
-            # Detect Signal Line
+            # Detect Signal/Direction Lines
             if "Signal:" in line:
                 if current_section == "Rates":
                     prefix = line.split("Signal:")[0]
@@ -602,6 +602,17 @@ def clean_llm_output(text, cme_signals=None):
                 elif current_section == "Equities":
                     prefix = line.split("Signal:")[0]
                     line = f"{prefix}Signal: {eq_sig_val}"
+            elif "Direction:" in line:
+                # Enforcement/Normalization
+                eq_allowed = cme_signals.get('equity', {}).get('direction_allowed', True)
+                rt_allowed = cme_signals.get('rates', {}).get('direction_allowed', True)
+                
+                if current_section == "Rates" and not rt_allowed:
+                    prefix = line.split("Direction:")[0]
+                    line = f"{prefix}Direction: Unknown"
+                elif current_section == "Equities" and not eq_allowed:
+                    prefix = line.split("Direction:")[0]
+                    line = f"{prefix}Direction: Unknown"
             
             new_lines.append(line)
         
@@ -651,7 +662,8 @@ def clean_llm_output(text, cme_signals=None):
         r"\bBalanced\b": "badge-blue",
         r"\bFresh\b": "badge-green",
         r"\bStale\b": "badge-red",
-        r"\bUnknown\b": "badge-gray"
+        r"\bUnknown\b": "badge-gray",
+        r"\bRedacted\b": "badge-gray"
     }
     for pattern, css_class in badges.items():
         text = re.sub(pattern, f'<span class="badge {css_class}">\\g<0></span>', text, flags=re.IGNORECASE)
