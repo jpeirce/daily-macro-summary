@@ -117,11 +117,14 @@ ANCHOR RULES:
    - These correspond to columns: [RTH VOLUME] [GLOBEX VOLUME] [OPEN INTEREST] [NET CHGE OI]
    - "UNCH" is a valid numeric token (means 0).
    - "----" or empty is null.
+3. Quality Audit: Scan the document for any lines beginning with "PLEASE NOTE" or "PRELIMINARY" and extract them.
 
 JSON OUTPUT SCHEMA:
 {
   "cme_section09": {
     "bulletin_date": "YYYY-MM-DD",
+    "is_preliminary": boolean,
+    "source": "CME Section 09 Interest Rate Futures",
     "totals": {
       "2y":   {"row_label": "TOTAL 2-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
       "3y":   {"row_label": "TOTAL 3-YR NOTE FUTURES", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
@@ -130,7 +133,8 @@ JSON OUTPUT SCHEMA:
       "tn":   {"row_label": "TOTAL TN FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
       "30y":  {"row_label": "TOTAL 30Y BOND FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string},
       "ultra":{"row_label": "TOTAL ULTRA T-BND FUT", "rth_volume": string, "globex_volume": string, "open_interest": string, "oi_change": string}
-    }
+    },
+    "data_quality_notes": [string]
   }
 }
 """
@@ -611,6 +615,7 @@ def process_cme_sec09(raw_data):
 
     sec09 = raw_data["cme_section09"]
     totals = sec09.get("totals", {})
+    notes = sec09.get("data_quality_notes", [])
     
     # 1. Normalize & Cast
     processed_tenors = {}
@@ -656,17 +661,26 @@ def process_cme_sec09(raw_data):
                 signed_sum += chg
         cluster_stats[name] = {"abs_oi_change": abs_sum, "net_oi_change": signed_sum}
 
-    # 3. Dominance
-    # Find cluster with max absolute OI change
+    # 3. Dominance & Regime
     active_cluster = max(cluster_stats, key=lambda k: cluster_stats[k]["abs_oi_change"]) if cluster_stats else "N/A"
-    
-    # Find single most active tenor
     active_tenor = max(processed_tenors, key=lambda k: abs(processed_tenors[k]["oi_change"])) if processed_tenors else "N/A"
     
-    # Concentration (Top 2 tenors share of total abs delta)
+    # Optional Regime Label (Section 3C)
+    short_abs = cluster_stats.get("Short End", {}).get("abs_oi_change", 0)
+    long_abs = cluster_stats.get("Long End", {}).get("abs_oi_change", 0)
+    regime = "Mixed"
+    if long_abs > short_abs and long_abs > 0: regime = "Long-end dominant"
+    elif short_abs > long_abs and short_abs > 0: regime = "Front-end dominant"
+
+    # Concentration
     total_abs_delta = sum(abs(t["oi_change"]) for t in processed_tenors.values())
     top2_abs = sum(sorted([abs(t["oi_change"]) for t in processed_tenors.values()], reverse=True)[:2])
     concentration = (top2_abs / total_abs_delta) if total_abs_delta > 0 else 0.0
+
+    # 4. Quality Guards
+    is_complete = len(processed_tenors) >= 5
+    if not is_complete:
+        notes.append("partial_section09_parse")
 
     return {
         "tenors": processed_tenors,
@@ -674,11 +688,14 @@ def process_cme_sec09(raw_data):
         "dominance": {
             "active_cluster": active_cluster,
             "active_tenor": active_tenor,
-            "concentration": concentration
+            "concentration": concentration,
+            "regime_label": regime
         },
         "quality": {
             "missing_tenors": missing_tenors,
-            "is_complete": len(missing_tenors) <= 2
+            "is_complete": is_complete,
+            "notes": notes,
+            "is_preliminary": sec09.get("is_preliminary", False)
         }
     }
 
@@ -1059,7 +1076,10 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         <div class="rates-curve-panel">
             <div class="curve-header">
                 <strong>Rates Curve Structure</strong>
-                <span style="font-size: 0.85em; color: #666;">Active: {dom.get('active_cluster')} ({dom.get('active_tenor')})</span>
+                <span style="font-size: 0.85em; color: #666;">
+                    {make_chip('Regime', dom.get('regime_label', 'Mixed'))}
+                    Active: {dom.get('active_cluster')} ({dom.get('active_tenor')})
+                </span>
             </div>
             <div class="curve-grid">
                 {rows}
