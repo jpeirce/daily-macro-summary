@@ -753,6 +753,16 @@ def clean_llm_output(text, cme_signals=None):
         if filter_applied and "Note: Automatic direction filter applied" not in text:
             text += "\n\n*(Note: Automatic direction filter applied to non-directional signal sections)*"
 
+    # Inject TOC Anchors
+    text = re.sub(r"(?i)(### 1\. The Dashboard)", r'<a id="scoreboard"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 2\. Executive Takeaway)", r'<a id="takeaway"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 3\. The .*Fiscal)", r'<a id="fiscal"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 4\. Rates)", r'<a id="rates"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 5\. The .*Canary)", r'<a id="credit"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 6\. The .*Engine)", r'<a id="engine"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 7\. Valuation)", r'<a id="valuation"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 8\. Conclusion)", r'<a id="conclusion"></a>\n\1', text)
+
     return text.strip()
 
 def get_score_color(category, score):
@@ -838,12 +848,31 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         kn_html += f"<div class='key-number-item' title='{tooltip}' style='cursor: help;'><span class='key-number-label'>{label}</span><span class='key-number-value'>{val}</span></div>"
     kn_html += "</div>"
 
+    # Construct Signals Panel
+    def sig_panel_item(label, sig_data):
+        quality = sig_data.get('signal_label', 'Unknown')
+        deltas = f"Fut: {d(sig_data.get('futures_oi_delta'))} | Opt: {d(sig_data.get('options_oi_delta'))}"
+        reason = sig_data.get('gate_reason', '')
+        return f"""
+        <div class="signal-chip" title="{reason}">
+            <strong>{label}:</strong> {make_chip('Sig', quality)} <span style="color:#777; font-size:0.9em;">{deltas}</span>
+        </div>
+        """
+    
+    signals_panel_html = f"""
+    <div class="signals-panel">
+        {sig_panel_item('Equities', cme_signals.get('equity', {}))}
+        {sig_panel_item('Rates', cme_signals.get('rates', {}))}
+    </div>
+    """
+
     # Build columns conditionally
     columns_html = ""
     if "Gemini summary skipped" not in summary_gemini:
         columns_html += f"""
             <div class="column">
                 <h2>🤖 Gemini ({GEMINI_MODEL})</h2>
+                {signals_panel_html}
                 {html_gemini}
             </div>
         """
@@ -852,6 +881,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         columns_html += f"""
             <div class="column">
                 <h2>🧠 OpenRouter ({OPENROUTER_MODEL})</h2>
+                {signals_panel_html}
                 {html_or}
             </div>
         """
@@ -867,9 +897,27 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .provenance-item { display: flex; align-items: center; gap: 6px; }
     .provenance-label { font-weight: 600; color: #24292e; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px; }
     
-    .container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
+    /* Layout & TOC */
+    .layout-wrapper { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; }
+    .toc-sidebar { width: 200px; position: sticky; top: 80px; align-self: flex-start; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 0.9em; max-height: 80vh; overflow-y: auto; }
+    .toc-sidebar h3 { margin-top: 0; font-size: 1em; color: #7f8c8d; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .toc-sidebar a { display: block; padding: 6px 0; color: #34495e; text-decoration: none; border-bottom: 1px solid #f9f9f9; }
+    .toc-sidebar a:hover { color: #3498db; padding-left: 4px; transition: padding 0.2s; }
+    
+    .container { flex: 1; display: flex; gap: 20px; flex-wrap: wrap; }
     .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); line-height: 1.75; }
     
+    /* Numeric Formatting */
+    .numeric { text-align: right; font-variant-numeric: tabular-nums; font-family: "SF Mono", "Segoe UI Mono", "Roboto Mono", monospace; }
+    table td:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; } /* Auto-target Score column */
+    
+    /* Signals Panel */
+    .signals-panel { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.85em; }
+    .signal-chip { background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
+    
+    /* Deterministic Separation */
+    .deterministic-tint { background-color: #fbfcfd; border-left: 4px solid #d1d5da; padding: 10px 15px; margin: 10px 0; font-style: italic; color: #586069; }
+
     /* Heading Normalization within Columns */
     .column h1, .column h2 { font-size: 1.4em; border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 0; color: #34495e; margin-bottom: 15px; }
     .column h3 { font-size: 1.15em; color: #2c3e50; margin-top: 20px; margin-bottom: 10px; font-weight: 700; }
@@ -1025,8 +1073,22 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
 
         {kn_html}
 
-        <div class="container">
-            {columns_html}
+        <div class="layout-wrapper">
+            <div class="toc-sidebar">
+                <h3>Contents</h3>
+                <a href="#scoreboard">1. Scoreboard</a>
+                <a href="#takeaway">2. Executive Takeaway</a>
+                <a href="#fiscal">3. Fiscal Dominance</a>
+                <a href="#rates">4. Rates & Curve</a>
+                <a href="#credit">5. Credit Stress</a>
+                <a href="#engine">6. Engine Room</a>
+                <a href="#valuation">7. Valuation</a>
+                <a href="#conclusion">8. Conclusion</a>
+            </div>
+            
+            <div class="container">
+                {columns_html}
+            </div>
         </div>
 
         <div class="algo-box">
