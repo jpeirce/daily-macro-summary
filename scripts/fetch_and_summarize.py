@@ -84,7 +84,8 @@ INPUTS PROVIDED (Vision):
 1. WisdomTree Daily Snapshot (Images): Charts, Spreads, and Yield Curve data.
 2. CME Daily Bulletin (Images): Dense tables showing Volume and Open Interest (Commitment).
 
-CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores and raw Extracted Metrics below. You MUST use these exact scores in your Scoreboard.
+CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores, raw Extracted Metrics, and deterministic Signal Labels below.
+You MUST use these exact scores and signals. Do NOT attempt to recalculate them.
 
 Ground Truth & Extracted Metrics (Use these values exactly):
 {ground_truth_json}
@@ -104,66 +105,35 @@ EVENT CONTEXT (Deterministic Flags):
 *   **IF "AUCTION_WEEK" or "REFUNDING" is present:**
     *   Treat rates OI/volume spikes as potentially auction/hedge-related.
 
-# === BLOCK 1: CME ANALYTIC FRAMEWORK (Strict Signal Logic) ===
+# === BLOCK 1: DETERMINISTIC SIGNAL GATES (HARD INVARIANTS) ===
 
-A. DEFINITIONS & PRE-CHECKS:
-   * **Rates Definition:** "Price DOWN" = Treasury Yields RISING (from WisdomTree PDF). "Price UP" = Treasury Yields FALLING.
-   * **Noise Filter (Per Asset Class):** IF max(abs(Futures OI Δ), abs(Options OI Δ)) < 50,000 contracts for a specific asset:
-     * Label = "Low Signal / Noise".
-     * Direction = "Unknown".
-     * **SKIP Block 1.B (The Gate) and 1.E (Directional Interpretation) for this asset.**
-   * **Invariant:** If Signal = "Low Signal / Noise", Direction MUST be "Unknown" and the report MUST explicitly state "Low Signal / Noise".
+Signal Quality and Direction Allowed are precomputed deterministically in Python. 
+YOU MUST adhere to these flags. Do not attempt to recalculate them.
 
-B. THE "FUTURES vs. OPTIONS" GATE (Evaluate Separately per Asset Class):
-   * **Rule:** Evaluate using ABSOLUTE values to determine dominance.
-   * **Logic:**
-     * IF abs(Options OI Δ) >= abs(Futures OI Δ): Signal Quality = **Hedging/Vol** (Low Confidence). Downgrade language.
-     * IF abs(Futures OI Δ) > abs(Options OI Δ): Signal Quality = **Directional** (High Confidence). Proceed to Step C.
+*   **Equities Signal:** Provided in `cme_signals.equity.signal_quality`
+*   **Equities Direction Allowed:** Provided in `cme_signals.equity.direction_allowed`
+*   **Rates Signal:** Provided in `cme_signals.rates.signal_quality`
+*   **Rates Direction Allowed:** Provided in `cme_signals.rates.direction_allowed`
 
-C. PRICE TREND & STALENESS CHECK (Priority: Live Data > WisdomTree PDF):
-   * **Step 1: Check Ground Truth Data.**
-     * IF `sp500_trend_status` exists and is not "Unknown":
-       * **Trend Status** = The value provided in `sp500_trend_status` (e.g., "Trending Up", "Flat").
-       * **Status** = "Fresh" (treated as Fresh when auditable and not Unknown).
-       * **MUST CITE:** You must quote the `sp500_trend_audit` string in your verification block to prove the source.
-       * **Ignore** the WisdomTree PDF chart for trend determination.
-   * **Step 2: Fallback to PDF (Only if Live Data is missing/unknown):**
-     * **Freshness Rule:** Compare Chart "as of" Date vs. Report Date.
-       * Status = **Fresh** ONLY IF trading-day difference is confidently <= 10.
-       * Otherwise, Status = **Stale**.
-     * **Impact:** IF Status = Stale, then Trend Status MUST be **Stale** and Direction MUST be **Unknown**.
-     * **Readability:** If the chart is pixelated or the last month's slope is ambiguous, Trend Status = **Unreadable**.
-   * **Valid States:** Flat, Trending Up, Trending Down, Stale, Unreadable.
+**CRITICAL RULES:**
+1.  **IF `direction_allowed` is False:** 
+    *   The Direction for that asset MUST be "Unknown".
+    *   Your narrative MUST remain neutral and non-directional. 
+    *   BAN all directional terms: "Bullish", "Bearish", "Rally", "Selloff", "Conviction".
+2.  **IF `signal_quality` is "Noise":** 
+    *   Direction MUST be "Unknown".
+    *   You MUST explicitly state: "Signal is below noise threshold."
 
-D. THE "SIDEWAYS" PROTOCOL (Only if Signal = Directional AND Trend Status = Flat):
-   * **LABEL:** "Position Build in Balance."
-     * *Meaning:* Risk added, buyers/sellers matched. Direction Balanced.
-     * *Constraint:* Do not upgrade to "Breakout Imminent" (insufficient chart granularity).
-
-E. DIRECTIONAL INTERPRETATION (Only if Trend is Valid/Current + Directional Signal):
-   * **CRITICAL INVARIANT:** IF Signal Quality is NOT "Directional", Direction MUST be **Unknown**. NO EXCEPTIONS.
-   * **CRITICAL INVARIANT:** IF Signal Quality is "Low Signal / Noise", Direction MUST be **Unknown**. NO EXCEPTIONS.
-   * Trend UP + Futures OI UP = Bullish Conviction (New Longs).
-   * Trend DOWN + Futures OI UP = Bearish Conviction (New Shorts).
-   * Trend UP + Futures OI DOWN = Short Covering (Weak Rally).
-   * Trend DOWN + Futures OI DOWN = Long Liquidation (Weak Selloff).
-   * **IF Trend = Stale/Unreadable:** Direction = **Unknown** (Do not guess).
-
-# === BLOCK 2: VISUAL EXTRACTION INSTRUCTIONS ===
+# === BLOCK 2: PRICE TREND & STALENESS CHECK ===
 
 ### 0. Visual Data Extraction (Internal Logic)
-1. **Scan CME Section 01 (Separately):**
-   * **Equities:** Extract Signed OI Δ. Check Noise Filter first. If Valid, compare ABS values for the Gate.
-   * **Rates:** Extract Signed OI Δ. Check Noise Filter first. If Valid, compare ABS values for the Gate.
+1. **Scan CME Section 01 (Separately):** Confirm the extracted values match the Ground Truth JSON.
 2. **Scan WisdomTree PDF (Price Direction & Freshness):**
-   * **Equities:** Check S&P 500 Chart (Header: "S&P 500 Index Price Level...").
-     * *Date Check:* Is it Fresh (<=10 days) or Stale?
-     * *Trend Check:* If Fresh, determine state: Flat, Trending Up, or Trending Down?
    * **Rates:** Check "Treasury Yields" Table (Pg 1). Did 10Y Yields rise (Price Down) or fall (Price Up)?
 3. **Construct The Verdicts:**
-   * *Signal Quality:* [Directional / Hedging-Vol / Noise]
+   * *Signal Quality:* Use the provided signal from Ground Truth.
    * *Direction:* [Bullish / Bearish / Balanced / Unknown]
-   * *Trend Status:* [Trending Up / Trending Down / Flat / Stale / Unreadable]
+   * *Trend Status:* Use the provided trend from Ground Truth.
 
 **OUTPUT INSTRUCTION:**
 Print the **DATA VERIFICATION** block below first (exactly as shown). **THEN** continue with the Final Output Structure (Scoreboard, Executive Takeaway, etc.).
@@ -175,8 +145,8 @@ Print the **DATA VERIFICATION** block below first (exactly as shown). **THEN** c
 > * **CME Extraction Note:** CME S01 extracted from page 1; if values are null, CME is unavailable.
 > * **Date Check:** Report Date: [Date] | SPX Trend Source: [yfinance/PDF]
 > * **Trend Audit:** [Quote `sp500_trend_audit` here if yfinance used, else "PDF Chart Analysis"]
-> * **Equities:** Futures OI Δ [Signed Val] | Options OI Δ [Signed Val] | Signal: [Type] | Trend Status: [Status] | Direction: [Status]
-> * **Rates:** Futures OI Δ [Signed Val] | Options OI Δ [Signed Val] | Signal: [Type] | Direction: [Status]
+> * **Equities:** Signal: [Label] | Trend Status: [Status] | Direction: [Status]
+> * **Rates:** Signal: [Label] | Direction: [Status]
 
 # === BLOCK 3: FINAL OUTPUT STRUCTURE ===
 
@@ -189,7 +159,7 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 |---|---|---|
 | Growth Impulse | [Score] | [Brief justification] |
 | Inflation Pressure | [Score] | [Brief justification] |
-| Liquidity Conditions | [Score] | [Look at CME Image: Is Volume high (deep liquidity) or low?] |
+| Liquidity Conditions | [Look at CME Image: Is Volume high (deep liquidity) or low?] |
 | Credit Stress | [Score] | [Brief justification] |
 | Valuation Risk | [Score] | [Brief justification] |
 | Risk Appetite | [Score] | [Cite VIX from Ground Truth. Secondary: Is CME participation expanding or contracting?] |
@@ -204,18 +174,16 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 ### 4. Rates & Curve Profile
 [Shape, Implication]
 **The Positioning Check (Source: CME Section 01 Images):**
-* **Step 1:** Compare "FUTURES ONLY" OI Change vs. "OPTIONS ONLY" OI Change for Interest Rates.
-* **Step 2: Determine Signal Quality:**
-    * *IF Futures OI > Options OI:* You may describe the move with **High Confidence** (e.g., "Directional positioning likely increased").
-    * *IF Options OI > Futures OI:* You must **Qualify** the signal (e.g., "Dominated by Options activity, suggesting complex positioning or hedging rather than a pure directional bet").
-* **Output:** State the Futures/Options split to justify your confidence level. Combine with WisdomTree Yield direction (e.g., Yields Up + Futures OI Up = Likely Shorting).
+* **Step 1:** Use the provided Rates Signal Quality.
+* **Step 2:** Combine with WisdomTree Yield direction (e.g., Yields Up + Futures OI Up = Likely Shorting).
+* **Output:** State the Futures/Options split to justify your confidence level. 
 
 ### 5. The "Canary in the Coal Mine" (Credit Stress)
 [Data, Implication]
 
 ### 6. The "Engine Room" (Market Breadth)
 [Data, Implication]
-*Synthesize the CME Image data. Check the Equity Index Futures vs. Options OI split. Is the leverage expansion driven by directional bets (Futures) or hedging (Options)?*
+*Synthesize the CME Image data. Describe the Equity Index positioning based on the provided signal label.*
 
 ### 7. Valuation & Positioning
 [Data, International, Implication]
@@ -350,6 +318,23 @@ def pdf_to_images(pdf_path):
     return images
 
 # --- Deterministic Scoring Logic ---
+
+def determine_signal(futures_delta, options_delta, noise_threshold=50000):
+    if futures_delta is None or options_delta is None:
+        return {"signal_quality": "Unknown", "direction_allowed": False}
+    
+    fut_abs = abs(futures_delta)
+    opt_abs = abs(options_delta)
+    
+    # 1. Noise Filter
+    if max(fut_abs, opt_abs) < noise_threshold:
+        return {"signal_quality": "Noise", "direction_allowed": False}
+    
+    # 2. The Gate (Dominance check)
+    if opt_abs >= fut_abs:
+        return {"signal_quality": "Hedging-Vol", "direction_allowed": False}
+    else:
+        return {"signal_quality": "Directional", "direction_allowed": True}
 
 def calculate_deterministic_scores(extracted_data):
     print("Calculating deterministic scores...")
@@ -563,7 +548,7 @@ def summarize_gemini(pdf_paths, ground_truth, event_context):
     except Exception as e:
         return f"Gemini Error: {e}"
 
-def clean_llm_output(text):
+def clean_llm_output(text, cme_signals=None):
     text = text.strip()
     if text.startswith("```markdown"): text = text[11:]
     elif text.startswith("```"): text = text[3:]
@@ -587,7 +572,20 @@ def clean_llm_output(text):
         if "Language normalization applied" not in text:
             text += "\n\n*(Note: Language normalization applied to remove attribution)*"
     
-    # Pass 3: Signal Badges (Visual Polish)
+    # Pass 3: Directional Leakage Validator
+    if cme_signals:
+        # If any asset class has direction_allowed=False, we scrub directional terms from the entire report
+        # to ensure strict compliance with logic gates.
+        any_disallowed = any(not s.get('direction_allowed', True) for s in cme_signals.values())
+        if any_disallowed:
+            leakage_pattern = re.compile(r"\b(bullish|bearish|conviction|aggressive|rally|selloff|breakout)\b", re.IGNORECASE)
+            if leakage_pattern.search(text):
+                print("Warning: Directional leakage detected in non-directional regime. Scrubbing...")
+                text = leakage_pattern.sub("[direction-redacted]", text)
+                if "Note: Automatic direction filter applied" not in text:
+                    text += "\n\n*(Note: Automatic direction filter applied due to signal quality gates)*"
+
+    # Pass 4: Signal Badges (Visual Polish)
     # Define color-coded badges for common signal keywords
     badges = {
         r"\bDirectional\b": "badge-blue",
@@ -621,10 +619,10 @@ def get_score_color(category, score):
         
     return "#2c3e50" 
 
-def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics):
+def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None):
     print("Generating HTML report...")
-    summary_or = clean_llm_output(summary_or)
-    summary_gemini = clean_llm_output(summary_gemini)
+    summary_or = clean_llm_output(summary_or, cme_signals)
+    summary_gemini = clean_llm_output(summary_gemini, cme_signals)
     
     html_or = markdown.markdown(summary_or, extensions=['tables'])
     html_gemini = markdown.markdown(summary_gemini, extensions=['tables'])
@@ -850,9 +848,23 @@ def main():
 
     algo_scores, score_details = calculate_deterministic_scores(extracted_metrics)
     
+    # Pre-calculate Signals
+    equity_signal = determine_signal(
+        extracted_metrics.get('cme_equity_futures_oi_change'),
+        extracted_metrics.get('cme_equity_options_oi_change')
+    )
+    rates_signal = determine_signal(
+        extracted_metrics.get('cme_rates_futures_oi_change'),
+        extracted_metrics.get('cme_rates_options_oi_change')
+    )
+
     ground_truth_context = {
         "extracted_metrics": extracted_metrics,
-        "calculated_scores": algo_scores
+        "calculated_scores": algo_scores,
+        "cme_signals": {
+            "equity": equity_signal,
+            "rates": rates_signal
+        }
     }
     
     # Event Context - Anchored to effective market date
@@ -871,7 +883,7 @@ def main():
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
-    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics)
+    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'))
     
     # Email
     repo_name = GITHUB_REPOSITORY.split("/")[-1]
