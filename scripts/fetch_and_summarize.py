@@ -182,7 +182,7 @@ Do NOT include any verification data, raw metrics, or event flags in your output
 
 # === BLOCK 3: FINAL OUTPUT STRUCTURE ===
 
-### 1. The Dashboard (Scoreboard)
+### 1. The Dashboard (Scoreboard) [SECTION:DASHBOARD]
 
 Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 *In the 'Justification' column, reference the visual evidence from the CME images (Volume/OI) to support the score.*
@@ -198,31 +198,31 @@ Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 | Valuation Risk | [Score] | [Brief justification] |
 | Risk Appetite | [Score] | [Cite VIX from Ground Truth. Secondary: Is CME participation expanding or contracting?] |
 
-### 2. Executive Takeaway (5–7 sentences)
+### 2. Executive Takeaway [SECTION:SUMMARY]
 [Regime Name, The Driver, The Pivot]
 *Constraint: Explicitly state if the CME positioning (OI changes) confirms the price action seen in the WisdomTree charts. Use Combined Totals ONLY for gauging general liquidity/participation. Do NOT use Combined Totals for directional conviction.*
 
-### 3. The "Fiscal Dominance" Check (Monetary Stress)
+### 3. The "Fiscal Dominance" Check (Monetary Stress) [SECTION:FISCAL]
 [Data, Implication]
 
-### 4. Rates & Curve Profile
+### 4. Rates & Curve Profile [SECTION:RATES]
 [Shape, Implication]
 **The Positioning Check (Source: CME Section 01 Images):**
 * **Instruction:** Use the provided `cme_signals.rates.signal_label` and `gate_reason` directly. Do NOT attempt to recompute the signal from the images.
 * **Output:** State the Signal Label and briefly cite the underlying Open Interest split (Futures vs Options) to justify the label.
 
-### 5. The "Canary in the Coal Mine" (Credit Stress)
+### 5. The "Canary in the Coal Mine" (Credit Stress) [SECTION:CREDIT]
 [Data, Implication]
 
-### 6. The "Engine Room" (Market Breadth)
+### 6. The "Engine Room" (Market Breadth) [SECTION:EQUITIES]
 [Data, Implication]
 *Synthesize the CME Image data. Describe the Equity Index positioning based on the provided signal label.*
 
-### 7. Valuation & Positioning
+### 7. Valuation & Positioning [SECTION:VALUATION]
 [Data, International, Implication]
 *Constraint: Do NOT use terms like "Smart Money", "Whales", or "Insiders". Focus on structural positioning (hedging vs. direction).*
 
-### 8. Conclusion & Trade Tilt
+### 8. Conclusion & Trade Tilt [SECTION:CONCLUSION]
 [Cross-Asset Confirmation, Risk Rating, The Trade, Triggers]
 """
 
@@ -721,12 +721,12 @@ def clean_llm_output(text, cme_signals=None):
         current_section = "Unknown"
         
         for line in lines:
-            # Detect Section
-            if "Rates & Curve Profile" in line or "Positioning Check" in line:
+            # Detect Section using deterministic sentinels
+            if "[SECTION:RATES]" in line:
                 current_section = "Rates"
-            elif "Engine Room" in line or "Market Breadth" in line:
+            elif "[SECTION:EQUITIES]" in line:
                 current_section = "Equities"
-            elif "Executive Takeaway" in line:
+            elif "[SECTION:SUMMARY]" in line:
                 current_section = "Summary"
             
             # Detect Signal/Direction Lines
@@ -765,8 +765,8 @@ def clean_llm_output(text, cme_signals=None):
         filter_applied = False
         
         for section in sections:
-            is_rates = "Rates & Curve Profile" in section
-            is_equities = "Engine Room" in section or "Market Breadth" in section
+            is_rates = "[SECTION:RATES]" in section
+            is_equities = "[SECTION:EQUITIES]" in section
             
             should_scrub = False
             if is_rates and not rt_allowed: should_scrub = True
@@ -784,14 +784,17 @@ def clean_llm_output(text, cme_signals=None):
             text += "\n\n*(Note: Automatic direction filter applied to non-directional signal sections)*"
 
     # Inject TOC Anchors
-    text = re.sub(r"(?i)(### 1\. The Dashboard)", r'<a id="scoreboard"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 2\. Executive Takeaway)", r'<a id="takeaway"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 3\. The .*Fiscal)", r'<a id="fiscal"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 4\. Rates)", r'<a id="rates"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 5\. The .*Canary)", r'<a id="credit"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 6\. The .*Engine)", r'<a id="engine"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 7\. Valuation)", r'<a id="valuation"></a>\n\1', text)
-    text = re.sub(r"(?i)(### 8\. Conclusion)", r'<a id="conclusion"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 1\. The Dashboard.*SECTION:DASHBOARD\])", r'<a id="scoreboard"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 2\. Executive Takeaway.*SECTION:SUMMARY\])", r'<a id="takeaway"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 3\. The .*Fiscal.*SECTION:FISCAL\])", r'<a id="fiscal"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 4\. Rates.*SECTION:RATES\])", r'<a id="rates"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 5\. The .*Canary.*SECTION:CREDIT\])", r'<a id="credit"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 6\. The .*Engine.*SECTION:EQUITIES\])", r'<a id="engine"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 7\. Valuation.*SECTION:VALUATION\])", r'<a id="valuation"></a>\n\1', text)
+    text = re.sub(r"(?i)(### 8\. Conclusion.*SECTION:CONCLUSION\])", r'<a id="conclusion"></a>\n\1', text)
+
+    # Strip Sentinels from final output
+    text = re.sub(r"\s*\[SECTION:[A-Z]+\]", "", text)
 
     return text.strip()
 
