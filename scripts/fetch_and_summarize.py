@@ -590,6 +590,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
             <br><strong>This content is for informational purposes only and is NOT financial advice.</strong>
         </div>
         <div class="pdf-link">
+            <h3>Inputs</h3>
             <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
             &nbsp;&nbsp;
             <a href="{cme_pdf_url}" target="_blank" style="background-color: #2c3e50;">📊 View CME Report</a>
