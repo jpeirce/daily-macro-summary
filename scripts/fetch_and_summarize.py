@@ -1248,7 +1248,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     
     # We can add links to CME pdfs too if desired, but for now just Main
     main_pdf_url = PDF_SOURCES['wisdomtree']
-    cme_pdf_url = PDF_SOURCES['cme_vol']
+    cme_bulletin_url = "https://www.cmegroup.com/market-data/daily-bulletin.html"
     
     # Extract provenance info
     cme_date_str = extracted_metrics.get('cme_bulletin_date', 'N/A')
@@ -1372,7 +1372,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <h3>Inputs</h3>
             <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
             &nbsp;&nbsp;
-            <a href="{cme_pdf_url}" target="_blank">📊 View CME Report{cme_warning_flag}</a>
+            <a href="{cme_bulletin_url}" target="_blank" style="background-color: #2c3e50;">📊 View CME Bulletin{cme_warning_flag}</a>
         </div>
 
         {event_callout_html}
