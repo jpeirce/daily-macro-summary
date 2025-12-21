@@ -105,5 +105,28 @@ class TestLiveData(unittest.TestCase):
         self.assertEqual(data['sp500_trend_status'], "Unknown")
         self.assertIn("Data Stale", data['sp500_trend_audit'])
 
+    @patch('yfinance.Ticker')
+    @patch('fetch_and_summarize.datetime')
+    def test_single_row_today_crash(self, mock_datetime, mock_ticker):
+        # Setup: Today is Monday
+        fixed_now = datetime(2025, 12, 22, 12, 0, 0)
+        mock_datetime.now.return_value = fixed_now
+        
+        # Data has only 1 row, and it IS today (partial bar)
+        dates = pd.DatetimeIndex([fixed_now])
+        mock_hist = pd.DataFrame({
+            'Close': [100.0]
+        }, index=dates)
+        
+        mock_instance = MagicMock()
+        mock_instance.history.return_value = mock_hist
+        mock_ticker.return_value = mock_instance
+        
+        data = fetch_live_data()
+        
+        # Should return Unknown and cite insufficient data, NOT crash
+        self.assertEqual(data['sp500_trend_status'], "Unknown")
+        self.assertIn("Insufficient data", data['sp500_trend_audit'])
+
 if __name__ == '__main__':
     unittest.main()

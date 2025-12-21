@@ -234,6 +234,13 @@ def fetch_live_data():
             
             # If the last row is today, it's a partial bar (live). Use yesterday's close for trend stability.
             if last_date == today_date:
+                # Safety check: Ensure we actually have a previous row to fall back to
+                if len(hist_spx) < 2:
+                    print(f"Warning: Insufficient SPX data (only {len(hist_spx)} row) to skip partial bar.")
+                    data['sp500_trend_status'] = "Unknown"
+                    data['sp500_1mo_change_pct'] = None
+                    data['sp500_trend_audit'] = "Insufficient data (single partial row)"
+                    return data
                 current_idx = -2
             else:
                 current_idx = -1
@@ -252,6 +259,9 @@ def fetch_live_data():
             # We want strictly 21 trading days ago
             # If current_idx is -1, we need -22. If -2, we need -23.
             prior_idx = current_idx - 21
+            
+            # abs(prior_idx) represents the count of rows needed from the end.
+            # Pandas iloc[-N] requires len(df) >= N.
             required_len = abs(prior_idx)
             
             # Check if we have enough data
