@@ -813,13 +813,21 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     for k, v in scores.items():
         color = get_score_color(k, v)
         detail_text = details.get(k, "Unknown")
-        warning = ""
+        
+        # Determine status icon
         if "Default" in detail_text or "Error" in detail_text:
-            warning = " <span title='" + detail_text + "' style='cursor: help;'>⚠️</span>"
+            status_icon = f"<span title='{detail_text}' style='cursor: help;'>⚠️</span>"
         else:
-             warning = " <span title='" + detail_text + "' style='cursor: help; opacity: 0.5;'>✅</span>"
+            status_icon = f"<span title='{detail_text}' style='cursor: help; opacity: 0.5;'>✅</span>"
 
-        score_html += f"<div style='background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; border-left: 5px solid {color};'><strong>{k}</strong>{warning}<br><span style='font-size: 1.8em; color: {color}; font-weight: bold;'>{v}/10</span></div>"
+        score_html += f"""
+        <div class='score-card' style='border-left: 5px solid {color};'>
+            <div class='score-label'>
+                <span>{k}</span>
+                {status_icon}
+            </div>
+            <div class='score-value' style='color: {color};'>{v}/10</div>
+        </div>"""
     score_html += "</div>"
 
     # Generate Signal Highlights
@@ -956,6 +964,9 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     
     /* Grid Scoring */
     .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .score-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 110px; }
+    .score-label { font-size: 0.85em; color: #2c3e50; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 3.2em; line-height: 1.2; margin-bottom: 10px; font-weight: 600; }
+    .score-value { font-size: 1.8em; font-weight: bold; }
     
     /* Key Numbers Strip */
     .key-numbers { display: flex; flex-wrap: wrap; gap: 25px; justify-content: center; background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid #eee; }
@@ -975,7 +986,8 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
         body { background: #0d1117; color: #c9d1d9; }
-        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel, .score-card { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .score-label { color: #8b949e !important; }
         .signal-chip { background: #21262d !important; border-color: #30363d !important; color: #c9d1d9 !important; }
         .deterministic-tint { background-color: #1c2128 !important; border-left-color: #444c56 !important; color: #8b949e !important; }
         .toc-sidebar a { color: #c9d1d9; border-bottom-color: #21262d; }
