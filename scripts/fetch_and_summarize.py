@@ -681,11 +681,15 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             &nbsp;&nbsp;
             <a href="{cme_pdf_url}" target="_blank" style="background-color: #2c3e50;">📊 View CME Report</a>
         </div>
-        
+
+        <div class="container">
+            {columns_html}
+        </div>
+
         <div class="algo-box">
-            <h3>🧮 Deterministic "Ground Truth" Scores (Python Calculated)</h3>
+            <h3>🧮 Technical Audit: Ground Truth Calculation</h3>
             {score_html}
-            <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models below.</em></small>
+            <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models above.</em></small>
             
             <details style="margin-top: 15px; cursor: pointer;">
                 <summary style="font-weight: bold; color: #3498db;">Show Calculation Formulas</summary>
@@ -703,9 +707,6 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </details>
         </div>
 
-        <div class="container">
-            {columns_html}
-        </div>
         <div class="footer">
             <div style="margin-bottom: 20px; color: #7f8c8d; font-size: 0.85em; font-style: italic; line-height: 1.4; border-top: 1px solid #eee; padding-top: 20px;">
                 This is an independently generated summary of the publicly available WisdomTree Daily Dashboard and CME Data. Not affiliated with, reviewed by, or approved by WisdomTree or CME Group. Third-party sources are not responsible for the accuracy of this summary. No warranties are made regarding completeness, accuracy, or timeliness; data may be delayed or incorrect.
