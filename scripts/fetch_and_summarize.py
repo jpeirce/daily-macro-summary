@@ -975,7 +975,11 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
         body { background: #0d1117; color: #c9d1d9; }
-        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .signal-chip { background: #21262d !important; border-color: #30363d !important; color: #c9d1d9 !important; }
+        .deterministic-tint { background-color: #1c2128 !important; border-left-color: #444c56 !important; color: #8b949e !important; }
+        .toc-sidebar a { color: #c9d1d9; border-bottom-color: #21262d; }
+        .toc-sidebar a:hover { background: #21262d; }
         h1, h2, h3, strong { color: #c9d1d9 !important; }
         th { background-color: #21262d; color: #c9d1d9; border-color: #30363d; }
         td { color: #c9d1d9; border-color: #30363d; }
