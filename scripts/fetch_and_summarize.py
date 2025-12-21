@@ -1224,6 +1224,14 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .signals-panel { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 10px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.85em; }
     .signal-chip { background: #fff; border: 1px solid #ddd; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 6px; }
     
+    /* Rates Curve Panel */
+    .rates-curve-panel { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+    .curve-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; }
+    .curve-grid { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .curve-item { flex: 1; min-width: 80px; text-align: center; }
+    .curve-label { display: block; font-size: 0.75em; color: #7f8c8d; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+    .curve-value { font-family: ui-monospace, monospace; font-weight: bold; font-size: 1.1em; }
+    
     /* Event Callout */
     .event-callout { background: #f4f6f8; border: 1px solid #d1d5da; border-radius: 6px; padding: 12px 20px; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: #444; }
     .event-callout strong { color: #24292e; }
