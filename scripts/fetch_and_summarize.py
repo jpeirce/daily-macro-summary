@@ -850,6 +850,14 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         kn_html += f"<div class='key-number-item' title='{tooltip}' style='cursor: help;'><span class='key-number-label'>{label}</span><span class='key-number-value'>{val}</span></div>"
     kn_html += "</div>"
 
+    # Helper to fmt deltas
+    def d(val):
+        if val is None: return "N/A"
+        try:
+            return f"{int(val):+}"
+        except:
+            return str(val)
+
     # Construct Signals Panel
     def sig_panel_item(label, sig_data):
         quality = sig_data.get('signal_label', 'Unknown')
