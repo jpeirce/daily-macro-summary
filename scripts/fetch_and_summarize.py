@@ -572,6 +572,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     
     # We can add links to CME pdfs too if desired, but for now just Main
     main_pdf_url = PDF_SOURCES['wisdomtree']
+    cme_pdf_url = PDF_SOURCES['cme_vol']
     
     html_content = f"""
     <!DOCTYPE html>
@@ -586,9 +587,12 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
         <h1>Daily Macro Summary ({today})</h1>
         <div style="text-align: center; margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em; font-style: italic;">
             This is an independently generated summary of the publicly available WisdomTree Daily Dashboard and CME Data. Not affiliated with WisdomTree or CME.
+            <br><strong>This content is for informational purposes only and is NOT financial advice.</strong>
         </div>
         <div class="pdf-link">
             <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
+            &nbsp;&nbsp;
+            <a href="{cme_pdf_url}" target="_blank" style="background-color: #2c3e50;">📊 View CME Report</a>
         </div>
         
         <div class="algo-box">
