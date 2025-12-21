@@ -49,6 +49,7 @@ Extract the following keys:
   "hy_spread_median": float, // Historical Median HY Spread
   "forward_pe_current": float, // S&P 500 Forward P/E
   "forward_pe_median": float, // S&P 500 Forward P/E Median
+  "forward_pe_plus_1sigma": float, // S&P 500 Forward P/E +1 Sigma (Standard Deviation)
   "real_yield_10y": float, // 10-Year Real Yield (TIPS)
   "inflation_expectations_5y5y": float, // 5y5y Forward Inflation Expectation
   "yield_10y": float, // 10-Year Treasury Nominal Yield
@@ -207,6 +208,21 @@ def fetch_live_data():
             data['vix_index'] = round(hist_vix['Close'].iloc[-1], 2)
             print(f"Live VIX: {data['vix_index']}")
 
+        # Fetch 10Y Yield (^TNX) for precise BPS change
+        tnx = yf.Ticker("^TNX")
+        hist_tnx = tnx.history(period="5d") # Fetch a few days to ensure we get prev close
+        if len(hist_tnx) >= 2:
+            # TNX is in percent (e.g. 4.50 for 4.50%)
+            current_yield = hist_tnx['Close'].iloc[-1]
+            prev_yield = hist_tnx['Close'].iloc[-2]
+            change_bps = (current_yield - prev_yield) * 100
+            
+            data['ust10y_current'] = round(current_yield, 2)
+            data['ust10y_change_bps'] = round(change_bps, 1)
+            print(f"Live 10Y Yield: {data['ust10y_current']}% (Change: {data['ust10y_change_bps']} bps)")
+        else:
+            data['ust10y_change_bps'] = None
+
         # Fetch S&P 500 for Trend/Freshness (using ^GSPC Index)
         # Fetch 2mo to safely handle holidays and strict 21-day lookback
         spx = yf.Ticker("^GSPC")
@@ -327,15 +343,24 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
     rt_sig = cme_signals.get('rates', {})
     
     def fmt_val(v): return f"{v:,}" if isinstance(v, int) else str(v)
+    
+    bps_change = extracted_metrics.get('ust10y_change_bps')
+    rates_text = f"Signal: {rt_sig.get('signal_quality', 'Unknown')}"
+    if bps_change is not None:
+        rates_text += f" | 10Y Move: {bps_change:+.1f} bps (Live)"
 
     block = f"""
+<details>
+<summary><strong>Data Verification</strong> (Click to Expand)</summary>
+
 > **DATA VERIFICATION (DETERMINISTIC):**
 > * **Event Flags:** Today: {event_context.get('flags_today', [])} | Recent: {event_context.get('flags_recent', [])}
 > * **CME Provenance:** Bulletin Date: "{extracted_metrics.get('cme_bulletin_date', 'Unknown')}" | Total Volume: {fmt_val(extracted_metrics.get('cme_total_volume', 'N/A'))} | Total OI: {fmt_val(extracted_metrics.get('cme_total_open_interest', 'N/A'))}
 > * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
 > * **Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
 > * **Equities:** Signal: {eq_sig.get('signal_quality', 'Unknown')} | Trend Status: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Direction Allowed: {eq_sig.get('direction_allowed', False)}
-> * **Rates:** Signal: {rt_sig.get('signal_quality', 'Unknown')} | Direction Allowed: {rt_sig.get('direction_allowed', False)}
+> * **Rates:** {rates_text} | Direction Allowed: {rt_sig.get('direction_allowed', False)}
+</details>
 """
     return block
 
@@ -568,13 +593,16 @@ def clean_llm_output(text, cme_signals=None):
             text += "\n\n*(Note: Language normalization applied to remove attribution)*"
 
     # Pass 2: Nouns (e.g. "whales sold" -> "market participants sold")
-    noun_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?|allocators?|real money|pensions?|pension funds?|sovereign|sovereign wealth|macro funds?|levered funds?|CTAs)\b", re.IGNORECASE)
+    noun_pattern = re.compile(r"\b(smart money|whales?|insiders?|institutions?|big players?|professionals?|strong hands?|hedge funds?|asset managers?|dealers?|banks?|allocators?|funds?|big money|real money|pensions?|pension funds?|sovereign|sovereign wealth|macro funds?|levered funds?|CTAs)\b", re.IGNORECASE)
     if noun_pattern.search(text):
         print("Warning: Banned noun found. Normalizing...")
         text = noun_pattern.sub("market participants", text)
         if "Language normalization applied" not in text:
             text += "\n\n*(Note: Language normalization applied to remove attribution)*"
     
+    # Normalize Signal Vocabulary (e.g. Hedging/Vol -> Hedging-Vol)
+    text = re.sub(r"\bHedging/Vol\b", "Hedging-Vol", text, flags=re.IGNORECASE)
+
     # Pass 3: Targeted Directional Leakage Validator
     if cme_signals:
         eq_sig_val = cme_signals.get('equity', {}).get('signal_quality', 'Unknown')
@@ -766,9 +794,15 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
 
     css = """
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f4f6f8; transition: background 0.3s, color 0.3s; }
-    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-    .pdf-link { display: block; text-align: center; margin-bottom: 30px; }
-    .pdf-link a { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+    .pdf-link { display: block; text-align: center; margin-bottom: 20px; }
+    .pdf-link a { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 5px; }
+    
+    /* Provenance Strip */
+    .provenance-strip { display: flex; justify-content: center; gap: 20px; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #e1e4e8; font-size: 0.85em; color: #586069; }
+    .provenance-item { display: flex; align-items: center; gap: 6px; }
+    .provenance-label { font-weight: 600; color: #24292e; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px; }
+    
     .container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
     .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
@@ -788,7 +822,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .key-number-value { font-weight: bold; color: #2c3e50; font-size: 1.1em; }
 
     /* Signal Badges */
-    .badge { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; white-space: nowrap; }
+    .badge { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; white-space: nowrap; display: inline-block; }
     .badge-blue { background: #ebf5fb; color: #2980b9; border: 1px solid #aed6f1; }
     .badge-orange { background: #fef5e7; color: #d35400; border: 1px solid #f9e79f; }
     .badge-gray { background: #f4f6f6; color: #7f8c8d; border: 1px solid #d5dbdb; }
@@ -797,22 +831,28 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
 
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
-        body { background: #1a1a1a; color: #ecf0f1; }
-        .column, .algo-box, .score-grid > div, .footer, .key-numbers { background: #2c3e50 !important; border-color: #34495e !important; }
-        h1, h2, h3, strong { color: #ecf0f1 !important; }
-        th { background-color: #34495e; color: #ecf0f1; }
-        td { color: #ecf0f1; border-color: #444; }
-        a { color: #3498db; }
-        .key-number-value { color: #ecf0f1 !important; }
-        .key-number-label { color: #bdc3c7 !important; }
+        body { background: #0d1117; color: #c9d1d9; }
+        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        h1, h2, h3, strong { color: #c9d1d9 !important; }
+        th { background-color: #21262d; color: #c9d1d9; border-color: #30363d; }
+        td { color: #c9d1d9; border-color: #30363d; }
+        a { color: #58a6ff; }
+        .key-number-value { color: #c9d1d9 !important; }
+        .key-number-label { color: #8b949e !important; }
+        .provenance-label { color: #8b949e !important; }
+        .provenance-strip { color: #c9d1d9 !important; }
         .badge { filter: brightness(0.9); }
-        .algo-box details div { background: #1a1a1a !important; color: #ecf0f1 !important; border-color: #444 !important; }
+        .algo-box details div { background: #161b22 !important; color: #c9d1d9 !important; border-color: #30363d !important; }
     }
     """
     
     # We can add links to CME pdfs too if desired, but for now just Main
     main_pdf_url = PDF_SOURCES['wisdomtree']
     cme_pdf_url = PDF_SOURCES['cme_vol']
+    
+    # Extract provenance info
+    cme_date = extracted_metrics.get('cme_bulletin_date', 'N/A')
+    spx_audit = extracted_metrics.get('sp500_trend_audit', 'N/A')
     
     html_content = f"""
     <!DOCTYPE html>
@@ -829,10 +869,19 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             Independently generated summary. Informational use only—NOT financial advice. Full disclaimers in footer.
         </div>
         <div class="pdf-link">
-            <h3>Inputs</h3>
-            <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
-            &nbsp;&nbsp;
-            <a href="{cme_pdf_url}" target="_blank" style="background-color: #2c3e50;">📊 View CME Report</a>
+            <a href="{main_pdf_url}" target="_blank">📄 WisdomTree PDF</a>
+            <a href="{cme_pdf_url}" target="_blank">📊 CME Bulletin</a>
+        </div>
+        
+        <div class="provenance-strip">
+            <div class="provenance-item">
+                <span class="provenance-label">CME Date:</span>
+                <span>{cme_date}</span>
+            </div>
+            <div class="provenance-item">
+                <span class="provenance-label">SPX Trend:</span>
+                <span title="{spx_audit}">{spx_audit.split('(')[0].strip() if '(' in spx_audit else spx_audit}</span>
+            </div>
         </div>
 
         <div class="container">
@@ -840,7 +889,6 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         </div>
 
         <div class="algo-box">
-            <h3>🧮 Technical Audit: Ground Truth Calculation</h3>
             {score_html}
             {sig_html}
             {kn_html}
