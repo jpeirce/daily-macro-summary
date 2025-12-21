@@ -91,6 +91,8 @@ def get_event_context(report_date_str, lookback_days=7):
     context["flags_today"] = check_date(report_date)
 
     # Check Recent (last N days)
+    # Note: Using calendar-day lookback (timedelta). This is sufficient for date-based events 
+    # like OPEX/Witching. For session-based events, consider switching to a trading calendar.
     for i in range(1, lookback_days + 1):
         past_date = report_date - timedelta(days=i)
         past_flags = check_date(past_date)

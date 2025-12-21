@@ -84,9 +84,9 @@ INPUTS PROVIDED (Vision):
 1. WisdomTree Daily Snapshot (Images): Charts, Spreads, and Yield Curve data.
 2. CME Daily Bulletin (Images): Dense tables showing Volume and Open Interest (Commitment).
 
-CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores below. You MUST use these exact scores in your Scoreboard.
+CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores and raw Extracted Metrics below. You MUST use these exact scores in your Scoreboard.
 
-Ground Truth Data (Use these scores exactly):
+Ground Truth & Extracted Metrics (Use these values exactly):
 {ground_truth_json}
 
 EVENT CONTEXT (Deterministic Flags):
