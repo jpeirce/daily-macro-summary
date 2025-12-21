@@ -728,7 +728,8 @@ def clean_llm_output(text, cme_signals=None):
         eq_allowed = cme_signals.get('equity', {}).get('direction_allowed', True)
         rt_allowed = cme_signals.get('rates', {}).get('direction_allowed', True)
         
-        leakage_pattern = re.compile(r"\b(bullish|bearish|conviction|aggressive|rally|selloff|breakout|risk[- ]on|risk[- ]off|bull steepener|bear steepener|short covering|long liquidation|new longs|new shorts|breakdown|melt[- ]up)\b", re.IGNORECASE)
+        # Expanded Directional Vocabulary
+        leakage_pattern = re.compile(r"\b(bullish|bearish|conviction|aggressive|rally|selloff|breakout|risk[- ]on|risk[- ]off|bull steepener|bear steepener|short covering|long liquidation|new longs|new shorts|breakdown|melt[- ]up|buying the dip|selling the rip)\b", re.IGNORECASE)
         
         # Split text into sections by headers (robust against ##, ###, ####)
         sections = re.split(r"(?m)(?=^#{2,4}\s)", text)
@@ -744,6 +745,7 @@ def clean_llm_output(text, cme_signals=None):
             if is_equities and not eq_allowed: should_scrub = True
             
             if should_scrub and leakage_pattern.search(section):
+                # Aggressive Redaction
                 section = leakage_pattern.sub("[direction-redacted]", section)
                 filter_applied = True
             
