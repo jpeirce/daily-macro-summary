@@ -348,7 +348,9 @@ def determine_signal(futures_delta, options_delta, noise_threshold=50000):
         "gate_reason": "Missing Data",
         "participation_label": "Unknown",
         "futures_oi_delta": futures_delta,
-        "options_oi_delta": options_delta
+        "options_oi_delta": options_delta,
+        "noise_threshold": noise_threshold,
+        "dominance_ratio": 0.0
     }
 
     if futures_delta is None or options_delta is None:
@@ -357,6 +359,10 @@ def determine_signal(futures_delta, options_delta, noise_threshold=50000):
     fut_abs = abs(futures_delta)
     opt_abs = abs(options_delta)
     net_delta = futures_delta + options_delta
+    
+    # Calculate Dominance Ratio (Options / Futures)
+    dom_ratio = opt_abs / max(fut_abs, 1)
+    res["dominance_ratio"] = round(dom_ratio, 2)
     
     # Participation Logic
     res["participation_label"] = "Expanding" if net_delta > 0 else "Contracting"
@@ -377,14 +383,14 @@ def determine_signal(futures_delta, options_delta, noise_threshold=50000):
             "signal_label": "Hedging-Vol",
             "direction_allowed": False,
             "noise_filtered": False,
-            "gate_reason": f"Options (|{options_delta}|) >= Futures (|{futures_delta}|)"
+            "gate_reason": f"Options {dom_ratio:.1f}x Futures [|{options_delta}| >= |{futures_delta}|]"
         })
     else:
         res.update({
             "signal_label": "Directional",
             "direction_allowed": True,
             "noise_filtered": False,
-            "gate_reason": f"Futures (|{futures_delta}|) > Options (|{options_delta}|)"
+            "gate_reason": f"Futures > Options ({1/dom_ratio:.1f}x) [|{futures_delta}| > |{options_delta}|]"
         })
         
     return res
