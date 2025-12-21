@@ -56,6 +56,7 @@ Extract the following keys:
   "interest_coverage_small_cap": float, // S&P 600 Interest Coverage Ratio
   
   // From CME Section 01 Report
+  "cme_bulletin_date": string, // Date at top of CME report (e.g. "2025-12-19")
   "cme_total_volume": int, // Total Exchange Volume (Combined Total)
   "cme_total_open_interest": int, // Total Open Interest (Combined Total)
   
@@ -170,6 +171,7 @@ Print the **DATA VERIFICATION** block below first (exactly as shown). **THEN** c
 > **DATA VERIFICATION:**
 > * **Event Flags:** Today: [List flags] | Recent: [List flags]
 > * **Invariant Check:** IF Signal != "Directional" THEN Direction = "Unknown".
+> * **CME Provenance:** Bulletin Date: [Quote `cme_bulletin_date`] | Total Volume: [Val] | Total OI: [Val]
 > * **CME Extraction Note:** CME S01 extracted from page 1; if values are null, CME is unavailable.
 > * **Date Check:** Report Date: [Date] | SPX Trend Source: [yfinance/PDF]
 > * **Trend Audit:** [Quote `sp500_trend_audit` here if yfinance used, else "PDF Chart Analysis"]
@@ -601,7 +603,7 @@ def get_score_color(category, score):
         
     return "#2c3e50" 
 
-def generate_html(today, summary_or, summary_gemini, scores, details):
+def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics):
     print("Generating HTML report...")
     summary_or = clean_llm_output(summary_or)
     summary_gemini = clean_llm_output(summary_gemini)
@@ -713,6 +715,13 @@ def generate_html(today, summary_or, summary_gemini, scores, details):
     """
     
     with open("summaries/index.html", "w", encoding="utf-8") as f:
+        # Add hidden provenance data for reproducibility
+        provenance_data = {
+            "today": today,
+            "pdfs": [PDF_SOURCES[k] for k in PDF_SOURCES],
+            "extracted_metrics": extracted_metrics
+        }
+        f.write(f"<!-- Provenance: {json.dumps(provenance_data)} -->\n")
         f.write(html_content)
     print("HTML report generated.")
 
@@ -785,7 +794,7 @@ def main():
     
     # Save & Report
     os.makedirs("summaries", exist_ok=True)
-    generate_html(today, summary_or, summary_gemini, algo_scores, score_details)
+    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics)
     
     # Email
     repo_name = GITHUB_REPOSITORY.split("/")[-1]
