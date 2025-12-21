@@ -295,6 +295,20 @@ def fetch_live_data():
         else:
             data['ust10y_change_bps'] = None
 
+        # Fetch Macro Context (DXY, WTI, HYG)
+        for ticker, key in [("DX-Y.NYB", "dxy"), ("CL=F", "wti"), ("HYG", "hyg")]:
+            try:
+                t = yf.Ticker(ticker)
+                hist = t.history(period="5d")
+                if len(hist) >= 2:
+                    curr = hist['Close'].iloc[-1]
+                    prev = hist['Close'].iloc[-2]
+                    pct = ((curr - prev) / prev) * 100
+                    data[f'{key}_current'] = round(curr, 2)
+                    data[f'{key}_1d_chg'] = round(pct, 2)
+            except Exception as e:
+                print(f"Failed to fetch {ticker}: {e}")
+
         # Fetch S&P 500 for Trend/Freshness (using ^GSPC Index)
         # Fetch 2mo to safely handle holidays and strict 21-day lookback
         spx = yf.Ticker("^GSPC")
@@ -481,9 +495,19 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
     eq_deltas = f"[Fut: <span class=\"numeric\">{d(eq_sig.get('futures_oi_delta'))}</span> | Opt: <span class=\"numeric\">{d(eq_sig.get('options_oi_delta'))}</span>]"
     rt_deltas = f"[Fut: <span class=\"numeric\">{d(rt_sig.get('futures_oi_delta'))}</span> | Opt: <span class=\"numeric\">{d(rt_sig.get('options_oi_delta'))}</span>]"
 
+    # Direction Strings
+    eq_dir_str = "Allowed" if eq_sig.get('direction_allowed') else "Unknown"
+    rt_dir_str = "Allowed" if rt_sig.get('direction_allowed') else "Unknown"
+
     block = f"""
+<div class="algo-box" style="margin-bottom: 10px; padding: 10px;">
+    <strong>Audit Summary:</strong> 
+    {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} Equities ({eq_dir_str}) &nbsp;|&nbsp; 
+    {b(rt_sig.get('signal_label', 'Unknown'), rt_sig.get('gate_reason', ''))} Rates ({rt_dir_str})
+</div>
+
 <details>
-<summary><strong>Data Verification</strong> (Click to Expand)</summary>
+<summary><strong>Full Data Verification</strong> (Click to Expand)</summary>
 
 > **DATA VERIFICATION (DETERMINISTIC):**
 > * **Event Flags:** Today: {event_context.get('flags_today', [])} | Recent: {event_context.get('flags_recent', [])}
@@ -491,8 +515,8 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
 > * **CME Audit Anchors:** Totals: "{extracted_metrics.get('cme_totals_audit_label', 'N/A')}" | Rates: "{extracted_metrics.get('cme_rates_futures_audit_label', 'N/A')}" | Equities: "{extracted_metrics.get('cme_equity_futures_audit_label', 'N/A')}"
 > * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
 > * **SPX Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
-> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} {eq_deltas} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {eq_sig.get('direction_allowed', False)}
-> * **Rates:** {rates_text} {rt_deltas} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {rt_sig.get('direction_allowed', False)}
+> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} {eq_deltas} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {eq_dir_str}
+> * **Rates:** {rates_text} {rt_deltas} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {rt_dir_str}
 </details>
 """
     return block
@@ -921,6 +945,10 @@ def clean_llm_output(text, cme_signals=None):
     # Strip Sentinels from final output
     text = re.sub(r"\s*\[SECTION:[A-Z]+\]", "", text)
 
+    # Markdown Hardening: Remove unbalanced bold markers
+    if text.count("**") % 2 != 0:
+        text = text.replace("**", "")
+
     return text.strip()
 
 def get_score_color(category, score):
@@ -1016,15 +1044,16 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         ("Forward P/E", f"{fmt_num(kn.get('forward_pe_current'))}x", "Valuation: Price / Expected Earnings (next 12m)"),
         ("HY Spread", f"{fmt_num(kn.get('hy_spread_current'))}%", "Credit Risk: Yield difference between Junk Bonds and Treasuries"),
         ("10Y Nominal", f"{fmt_num(kn.get('yield_10y'))}%", "US Treasury 10-Year Yield (Risk-free rate proxy)"),
-        ("10Y Real", f"{fmt_num(kn.get('real_yield_10y'))}%", "Yield adjusted for inflation (TIPS)"),
-        ("5y5y Inf", f"{fmt_num(kn.get('inflation_expectations_5y5y'))}%", "Market-implied inflation expectation for 5-year period starting 5 years from now"),
+        ("DXY", f"{fmt_num(kn.get('dxy_current'))}", "US Dollar Index (Strength vs Basket)"),
+        ("WTI Crude", f"${fmt_num(kn.get('wti_current'))}", "Oil Price (Energy Cost Proxy)"),
+        ("HYG", f"${fmt_num(kn.get('hyg_current'))}", "High Yield Bond ETF (Liquidity Proxy)"),
         ("VIX", f"{fmt_num(kn.get('vix_index'))}", "Market Volatility Index (Fear Gauge)"),
         ("CME Vol", f"{fmt_num(kn.get('cme_total_volume'))}", "Total Volume across CME Exchange")
     ]
     
     kn_html = "<div class='key-numbers'>"
     for label, val, tooltip in key_numbers_items:
-        kn_html += f"<div class='key-number-item' title='{tooltip}' style='cursor: help;'><span class='key-number-label'>{label}</span><span class='key-number-value'>{val}</span></div>"
+        kn_html += f"<div class='key-number-item' title='{tooltip}' style='cursor: help;'><span class='key-number-label'>{label}</span><span class='key-number-value numeric'>{val}</span></div>"
     kn_html += "</div>"
 
     # Helper to fmt deltas
