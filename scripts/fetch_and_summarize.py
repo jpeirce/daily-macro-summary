@@ -806,19 +806,19 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         except: return str(val)
 
     key_numbers_items = [
-        ("S&P 500", fmt_num(kn.get('sp500_current'))),
-        ("Forward P/E", f"{fmt_num(kn.get('forward_pe_current'))}x"),
-        ("HY Spread", f"{fmt_num(kn.get('hy_spread_current'))}%"),
-        ("10Y Nominal", f"{fmt_num(kn.get('yield_10y'))}%"),
-        ("10Y Real", f"{fmt_num(kn.get('real_yield_10y'))}%"),
-        ("5y5y Inf", f"{fmt_num(kn.get('inflation_expectations_5y5y'))}%"),
-        ("VIX", f"{fmt_num(kn.get('vix_index'))}"),
-        ("CME Vol", f"{fmt_num(kn.get('cme_total_volume'))}")
+        ("S&P 500", fmt_num(kn.get('sp500_current')), "Broad US Equity Market Index"),
+        ("Forward P/E", f"{fmt_num(kn.get('forward_pe_current'))}x", "Valuation: Price / Expected Earnings (next 12m)"),
+        ("HY Spread", f"{fmt_num(kn.get('hy_spread_current'))}%", "Credit Risk: Yield difference between Junk Bonds and Treasuries"),
+        ("10Y Nominal", f"{fmt_num(kn.get('yield_10y'))}%", "US Treasury 10-Year Yield (Risk-free rate proxy)"),
+        ("10Y Real", f"{fmt_num(kn.get('real_yield_10y'))}%", "Yield adjusted for inflation (TIPS)"),
+        ("5y5y Inf", f"{fmt_num(kn.get('inflation_expectations_5y5y'))}%", "Market-implied inflation expectation for 5-year period starting 5 years from now"),
+        ("VIX", f"{fmt_num(kn.get('vix_index'))}", "Market Volatility Index (Fear Gauge)"),
+        ("CME Vol", f"{fmt_num(kn.get('cme_total_volume'))}", "Total Volume across CME Exchange")
     ]
     
     kn_html = "<div class='key-numbers'>"
-    for label, val in key_numbers_items:
-        kn_html += f"<div class='key-number-item'><span class='key-number-label'>{label}</span><span class='key-number-value'>{val}</span></div>"
+    for label, val, tooltip in key_numbers_items:
+        kn_html += f"<div class='key-number-item' title='{tooltip}' style='cursor: help;'><span class='key-number-label'>{label}</span><span class='key-number-value'>{val}</span></div>"
     kn_html += "</div>"
 
     # Build columns conditionally
@@ -935,6 +935,28 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     except:
         pass
 
+    # Gather Status Bar Fields
+    eq_sig_label = cme_signals.get('equity', {}).get('signal_label', 'Unknown')
+    eq_dir_allowed = cme_signals.get('equity', {}).get('direction_allowed', False)
+    eq_dir_str = "Allowed" if eq_dir_allowed else "Unknown"
+    spx_trend_status = extracted_metrics.get('sp500_trend_status', 'Unknown')
+    
+    rt_sig_label = cme_signals.get('rates', {}).get('signal_label', 'Unknown')
+    rt_dir_allowed = cme_signals.get('rates', {}).get('direction_allowed', False)
+    rt_dir_str = "Allowed" if rt_dir_allowed else "Unknown"
+    ust10y_move = extracted_metrics.get('ust10y_change_bps')
+    ust10y_move_str = f"{ust10y_move:+.1f} bps" if ust10y_move is not None else "N/A"
+
+    def make_chip(label, val):
+        c = 'badge-gray'
+        v_lower = str(val).lower()
+        if 'directional' in v_lower: c = 'badge-blue'
+        elif 'hedging' in v_lower: c = 'badge-orange'
+        elif 'allowed' in v_lower: c = 'badge-green'
+        elif 'trending up' in v_lower or (isinstance(val, str) and val.startswith('+')): c = 'badge-green'
+        elif 'trending down' in v_lower or (isinstance(val, str) and val.startswith('-')): c = 'badge-red'
+        return f'<span class="badge {c}" style="font-size:0.75em; padding:1px 4px;">{val}</span>'
+
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -947,15 +969,22 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     <body>
         <h1>Daily Macro Summary ({today})</h1>
         
-        <div class="provenance-strip">
+        <div class="provenance-strip" style="flex-wrap: wrap;">
             <div class="provenance-item">
                 <span class="provenance-label">CME Date:</span>
                 <span>{cme_date_str}{cme_staleness_flag}</span>
             </div>
-            <div class="provenance-item">
-                <span class="provenance-label">SPX Trend:</span>
-                <span title="{spx_audit}">{spx_audit.split('(')[0].strip() if '(' in spx_audit else spx_audit}</span>
-                <span style="color: #8b949e; font-size: 0.9em; margin-left: 4px;">(Source: yfinance)</span>
+            <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
+                <span class="provenance-label">Equities:</span>
+                {make_chip('Sig', eq_sig_label)}
+                {make_chip('Dir', eq_dir_str)}
+                {make_chip('Trend', spx_trend_status)}
+            </div>
+            <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
+                <span class="provenance-label">Rates:</span>
+                {make_chip('Sig', rt_sig_label)}
+                {make_chip('Dir', rt_dir_str)}
+                {make_chip('10Y', ust10y_move_str)}
             </div>
         </div>
 
