@@ -94,12 +94,18 @@ B. THE "FUTURES vs. OPTIONS" GATE (Evaluate Separately per Asset Class):
      * IF abs(Options OI Δ) >= abs(Futures OI Δ): Signal Quality = **Hedging/Vol** (Low Confidence). Downgrade language.
      * IF abs(Futures OI Δ) > abs(Options OI Δ): Signal Quality = **Directional** (High Confidence). Proceed to Step C.
 
-C. PRICE TREND & STALENESS CHECK (WisdomTree PDF S&P 500 Chart):
-   * **Freshness Rule:** Compare Chart "as of" Date vs. Report Date.
-     * Status = **Fresh** ONLY IF trading-day difference is confidently <= 10.
-     * Otherwise, Status = **Stale**.
-   * **Impact:** IF Status = Stale, then Trend Status MUST be **Stale** and Direction MUST be **Unknown**.
-   * **Readability:** If the chart is pixelated or the last month's slope is ambiguous, Trend Status = **Unreadable**.
+C. PRICE TREND & STALENESS CHECK (Priority: Live Data > WisdomTree PDF):
+   * **Step 1: Check Ground Truth Data.**
+     * IF `sp500_trend_status` exists in Ground Truth (from yfinance):
+       * **Trend Status** = The value provided in `sp500_trend_status` (e.g., "Trending Up", "Flat").
+       * **Status** = "Fresh" (Live data is always fresh).
+       * **Ignore** the WisdomTree PDF chart for trend determination (it is often stale).
+   * **Step 2: Fallback to PDF (Only if Live Data is missing):**
+     * **Freshness Rule:** Compare Chart "as of" Date vs. Report Date.
+       * Status = **Fresh** ONLY IF trading-day difference is confidently <= 10.
+       * Otherwise, Status = **Stale**.
+     * **Impact:** IF Status = Stale, then Trend Status MUST be **Stale** and Direction MUST be **Unknown**.
+     * **Readability:** If the chart is pixelated or the last month's slope is ambiguous, Trend Status = **Unreadable**.
    * **Valid States:** Flat, Trending Up, Trending Down, Stale, Unreadable.
 
 D. THE "SIDEWAYS" PROTOCOL (Only if Signal = Directional AND Trend Status = Flat):
@@ -207,12 +213,68 @@ def fetch_live_data():
     try:
         # Fetch VIX
         vix = yf.Ticker("^VIX")
-        hist = vix.history(period="1d")
-        if not hist.empty:
-            data['vix_index'] = round(hist['Close'].iloc[-1], 2)
+        hist_vix = vix.history(period="1d")
+        if not hist_vix.empty:
+            data['vix_index'] = round(hist_vix['Close'].iloc[-1], 2)
             print(f"Live VIX: {data['vix_index']}")
+
+        # Fetch S&P 500 for Trend/Freshness (using ^GSPC Index)
+        # Fetch 3mo to safely handle holidays and strict 21-day lookback
+        spx = yf.Ticker("^GSPC")
+        hist_spx = spx.history(period="3mo")
+        
+        # Determine strict "Close-to-Close" indices
+        if not hist_spx.empty:
+            last_date = hist_spx.index[-1].date()
+            today_date = datetime.now().date()
+            
+            # If the last row is today, it's a partial bar (live). Use yesterday's close for trend stability.
+            if last_date == today_date:
+                current_idx = -2
+            else:
+                current_idx = -1
+                
+            # We need enough data: absolute index of current + 21 days lookback
+            # e.g., if current is -1, we need -22 (len >= 22). If current is -2, we need -23 (len >= 23).
+            required_len = abs(current_idx) + 21
+            
+            if len(hist_spx) >= required_len:
+                prior_idx = current_idx - 21
+                
+                current_close = hist_spx['Close'].iloc[current_idx]
+                prior_close = hist_spx['Close'].iloc[prior_idx]
+                
+                # Store dates for audit
+                current_date_str = hist_spx.index[current_idx].strftime('%Y-%m-%d')
+                prior_date_str = hist_spx.index[prior_idx].strftime('%Y-%m-%d')
+
+                pct_change = ((current_close - prior_close) / prior_close) * 100
+                
+                trend_status = "Flat"
+                if pct_change >= 2.0: trend_status = "Trending Up"
+                elif pct_change <= -2.0: trend_status = "Trending Down"
+                
+                data['sp500_current'] = round(current_close, 2)
+                data['sp500_trend_status'] = trend_status
+                data['sp500_1mo_change_pct'] = round(pct_change, 2)
+                data['sp500_trend_audit'] = f"Change from {prior_date_str} ({prior_close:.2f}) to {current_date_str} ({current_close:.2f})"
+                
+                print(f"SPX Trend: {trend_status} ({pct_change:.2f}%) | {data['sp500_trend_audit']}")
+            else:
+                print(f"Warning: Insufficient SPX data. Rows: {len(hist_spx)}, Required: {required_len}")
+                data['sp500_trend_status'] = "Unknown"
+                data['sp500_1mo_change_pct'] = None
+                data['sp500_trend_audit'] = "Insufficient data"
+        else:
+            data['sp500_trend_status'] = "Unknown"
+            data['sp500_1mo_change_pct'] = None
+            data['sp500_trend_audit'] = "No data fetched"
+
     except Exception as e:
         print(f"Error fetching live data: {e}")
+        data['sp500_trend_status'] = "Unknown"
+        data['sp500_trend_audit'] = f"Error: {str(e)}"
+        
     return data
 
 def pdf_to_images(pdf_path):
