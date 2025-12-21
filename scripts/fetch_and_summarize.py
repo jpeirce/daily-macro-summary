@@ -813,7 +813,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     print("Generating HTML report...")
     
     # Helper to badge chips
-    def make_chip(label, val):
+    def make_chip(label, val, tooltip=""):
         c = 'badge-gray'
         v_lower = str(val).lower()
         if 'directional' in v_lower: c = 'badge-blue'
@@ -823,7 +823,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         elif 'contracting' in v_lower: c = 'badge-red'
         elif 'trending up' in v_lower or (isinstance(val, str) and val.startswith('+')): c = 'badge-green'
         elif 'trending down' in v_lower or (isinstance(val, str) and val.startswith('-')): c = 'badge-red'
-        return f'<span class="badge {c}" style="font-size:0.75em; padding:1px 4px;">{val}</span>'
+        return f'<span class="badge {c}" title="{tooltip}" style="font-size:0.75em; padding:1px 4px;">{val}</span>'
 
     # Prepend Verification Block to the raw text BEFORE markdown conversion
     if verification_block:
@@ -1067,10 +1067,10 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             # If CME date is older than 3 days (buffer for weekends), mark as stale
             days_diff = (eff_dt - cme_dt).days
             if days_diff > 3:
-                cme_staleness_flag = f' <span class="badge badge-red" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
+                cme_staleness_flag = f' <span class="badge badge-red" title="Data is lagging today by {days_diff} days" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
                 cme_warning_flag = cme_warning_flag # Ensure warning persists if both issues exist
             else:
-                cme_staleness_flag = ' <span class="badge badge-green" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
+                cme_staleness_flag = ' <span class="badge badge-green" title="Data is current (within 3-day buffer)" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
     except:
         pass
 
@@ -1089,9 +1089,9 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             days_diff = (eff_dt - wt_dt).days
             
             if days_diff > 3:
-                wt_staleness_flag = f' <span class="badge badge-red" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
+                wt_staleness_flag = f' <span class="badge badge-red" title="Dashboard date lags today by {days_diff} days" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
             else:
-                wt_staleness_flag = ' <span class="badge badge-green" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
+                wt_staleness_flag = ' <span class="badge badge-green" title="Dashboard date is current (within 3-day buffer)" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
     except:
         pass
 
@@ -1145,17 +1145,17 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </div>
             <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
                 <span class="provenance-label">Equities:</span>
-                {make_chip('Pos', eq_sig_label)}
-                {make_chip('Part', eq_part_label)}
-                {make_chip('Dir', eq_dir_str)}
-                {make_chip('Trend', spx_trend_status)}
+                {make_chip('Pos', eq_sig_label, "Positioning Signal: Based on Futures vs Options dominance")}
+                {make_chip('Part', eq_part_label, "Participation: Are participants adding (Expanding) or removing (Contracting) money?")}
+                {make_chip('Dir', eq_dir_str, "Directional Conviction: Is the system allowed to interpret price direction?")}
+                {make_chip('Trend', spx_trend_status, "Price Trend: 1-month price action (Source: yfinance)")}
             </div>
             <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
                 <span class="provenance-label">Rates:</span>
-                {make_chip('Pos', rt_sig_label)}
-                {make_chip('Part', rt_part_label)}
-                {make_chip('Dir', rt_dir_str)}
-                {make_chip('10Y', ust10y_move_str)}
+                {make_chip('Pos', rt_sig_label, "Positioning Signal: Based on Futures vs Options dominance")}
+                {make_chip('Part', rt_part_label, "Participation: Are participants adding (Expanding) or removing (Contracting) money?")}
+                {make_chip('Dir', rt_dir_str, "Directional Conviction: Is the system allowed to interpret price direction?")}
+                {make_chip('10Y', ust10y_move_str, "Yield Move: Basis point change in the 10-Year Treasury yield today")}
             </div>
         </div>
 
