@@ -95,7 +95,7 @@ GLOBAL CONSTRAINTS (Language & Tone):
    * *Bad:* "Institutions are shorting aggressively."
    * *Good:* "Futures-led positioning increased; direction remains unknown unless Signal=Directional and Trend is valid."
    * *Bad:* "Smart money is buying the dip."
-   * *Good:* "Options skew indicates hedging activity has moderated."
+   * *Good:* "Options-led activity, typically associated with volatility or hedging demand, remains the primary driver."
 
 INPUTS PROVIDED (Vision):
 1. WisdomTree Daily Snapshot (Images): Charts, Spreads, and Yield Curve data.
@@ -295,7 +295,7 @@ def fetch_live_data():
 
                 pct_change = ((current_close - prior_close) / prior_close) * 100
                 
-                trend_status = "Flat"
+                trend_status = "Flat (Range-Bound)"
                 if pct_change >= 2.0: trend_status = "Trending Up"
                 elif pct_change <= -2.0: trend_status = "Trending Down"
                 
