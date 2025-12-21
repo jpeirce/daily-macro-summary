@@ -39,27 +39,6 @@ NOISE_THRESHOLDS = {
 }
 
 # --- Prompts ---
-...
-    .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); line-height: 1.75; }
-    
-    /* Numeric Formatting */
-    .numeric { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    table td:nth-child(2) { text-align: right; font-variant-numeric: tabular-nums; } /* Auto-target Score column */
-...
-def extract_metrics_gemini(pdf_paths):
-    print("Extracting Ground Truth Data with Gemini...")
-    if not AI_STUDIO_API_KEY: 
-        print("Error: AI_STUDIO_API_KEY not found. Skipping PDF extraction.")
-        return {}
-
-    genai.configure(api_key=AI_STUDIO_API_KEY)
-...
-        data = json.loads(text)
-        print(f"Extracted Data: {data}")
-        return data
-    except Exception as e:
-        print(f"Extraction failed (CME/WisdomTree Source): {e}")
-        return {}
 
 EXTRACTION_PROMPT = """
 You are a precision data extractor. Your job is to read the attached PDF pages (Financial Dashboard + CME Reports) and extract specific numerical data into valid JSON.
