@@ -586,6 +586,24 @@ def clean_llm_output(text):
         text = noun_pattern.sub("market participants", text)
         if "Language normalization applied" not in text:
             text += "\n\n*(Note: Language normalization applied to remove attribution)*"
+    
+    # Pass 3: Signal Badges (Visual Polish)
+    # Define color-coded badges for common signal keywords
+    badges = {
+        r"\bDirectional\b": "badge-blue",
+        r"\bHedging/Vol\b": "badge-orange",
+        r"\bLow Signal / Noise\b": "badge-gray",
+        r"\bBullish\b": "badge-green",
+        r"\bBearish\b": "badge-red",
+        r"\bTrending Up\b": "badge-green",
+        r"\bTrending Down\b": "badge-red",
+        r"\bFlat\b": "badge-gray",
+        r"\bBalanced\b": "badge-blue",
+        r"\bFresh\b": "badge-green",
+        r"\bStale\b": "badge-red"
+    }
+    for pattern, css_class in badges.items():
+        text = re.sub(pattern, f'<span class="badge {css_class}">\\g<0></span>', text, flags=re.IGNORECASE)
         
     return text.strip()
 
@@ -611,7 +629,8 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     html_or = markdown.markdown(summary_or, extensions=['tables'])
     html_gemini = markdown.markdown(summary_gemini, extensions=['tables'])
     
-    score_html = "<ul style='list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 15px;'>"
+    # Generate Scoreboard using CSS Grid
+    score_html = "<div class='score-grid'>"
     for k, v in scores.items():
         color = get_score_color(k, v)
         detail_text = details.get(k, "Unknown")
@@ -621,8 +640,8 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         else:
              warning = " <span title='" + detail_text + "' style='cursor: help; opacity: 0.5;'>✅</span>"
 
-        score_html += f"<li style='background: white; padding: 10px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1 0 140px; text-align: center; border-left: 5px solid {color};'><strong>{k}</strong>{warning}<br><span style='font-size: 1.5em; color: {color}; font-weight: bold;'>{v}/10</span></li>"
-    score_html += "</ul>"
+        score_html += f"<div style='background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; border-left: 5px solid {color};'><strong>{k}</strong>{warning}<br><span style='font-size: 1.8em; color: {color}; font-weight: bold;'>{v}/10</span></div>"
+    score_html += "</div>"
 
     # Build columns conditionally
     columns_html = ""
@@ -645,16 +664,27 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     css = """
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f4f6f8; }
     h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
-    .pdf-link { display: block; text-align: center; margin-bottom: 20px; }
+    .pdf-link { display: block; text-align: center; margin-bottom: 30px; }
     .pdf-link a { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
-    .container { display: flex; gap: 20px; flex-wrap: wrap; }
-    .column { flex: 1; min-width: 300px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
+    .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
     .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: #666; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
-    .algo-box { background: #e8f6f3; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #d1f2eb; }
+    .algo-box { background: #e8f6f3; padding: 25px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d1f2eb; }
+    
+    /* Grid Scoring */
+    .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    
+    /* Signal Badges */
+    .badge { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; white-space: nowrap; }
+    .badge-blue { background: #ebf5fb; color: #2980b9; border: 1px solid #aed6f1; }
+    .badge-orange { background: #fef5e7; color: #d35400; border: 1px solid #f9e79f; }
+    .badge-gray { background: #f4f6f6; color: #7f8c8d; border: 1px solid #d5dbdb; }
+    .badge-green { background: #e9f7ef; color: #27ae60; border: 1px solid #abebc6; }
+    .badge-red { background: #fdedec; color: #c0392b; border: 1px solid #fadbd8; }
     """
     
     # We can add links to CME pdfs too if desired, but for now just Main
