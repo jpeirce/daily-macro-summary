@@ -701,12 +701,10 @@ def clean_llm_output(text, cme_signals=None):
         for section in sections:
             is_rates = "Rates & Curve Profile" in section
             is_equities = "Engine Room" in section or "Market Breadth" in section
-            is_summary = "Executive Takeaway" in section or "Conclusion" in section
             
             should_scrub = False
             if is_rates and not rt_allowed: should_scrub = True
             if is_equities and not eq_allowed: should_scrub = True
-            if is_summary and (not eq_allowed or not rt_allowed): should_scrub = True
             
             if should_scrub and leakage_pattern.search(section):
                 section = leakage_pattern.sub("[direction-redacted]", section)
