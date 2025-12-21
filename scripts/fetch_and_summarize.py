@@ -1442,10 +1442,53 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </div>
         </div>
 
+    # Construct Glossary
+    glossary_items = [
+        ("Signal Badges", [
+            ("Directional", "blue", "Futures volume > Options volume. High conviction positioning."),
+            ("Hedging-Vol", "orange", "Options volume >= Futures volume. Positioning is driven by hedging or volatility bets."),
+            ("Low Signal / Noise", "gray", "Total volume change is below the noise threshold. Ignored.")
+        ]),
+        ("Trend & Participation", [
+            ("Trending Up", "green", "Price is rising (>2% over 21 days)."),
+            ("Trending Down", "red", "Price is falling (<-2% over 21 days)."),
+            ("Expanding", "green", "Open Interest is increasing (New money entering)."),
+            ("Contracting", "red", "Open Interest is decreasing (Money leaving/liquidating).")
+        ]),
+        ("Status & Freshness", [
+            ("Allowed", "green", "Directional narrative is permitted."),
+            ("Unknown/Redacted", "gray", "Directional narrative is blocked due to low signal quality."),
+            ("FRESH", "green", "Data source is current (within 3 days)."),
+            ("STALE", "red", "Data source is outdated (>3 days old)."),
+            ("⚠️ DATA INCOMPLETE", "warning", "Critical data fields were missing from the extraction.")
+        ])
+    ]
+
+    glossary_content = ""
+    for category, items in glossary_items:
+        glossary_content += f"<div style='margin-bottom: 15px;'><h4 style='margin-bottom:8px; border-bottom:1px solid #eee;'>{category}</h4>"
+        for label, color, desc in items:
+            glossary_content += f"<div style='margin-bottom: 4px;'><span class='badge badge-{color}' style='width: 120px; text-align: center;'>{label}</span> <span style='font-size: 0.9em; color: #666;'>{desc}</span></div>"
+        glossary_content += "</div>"
+
+    glossary_html = f"""
+    <div class="algo-box" style="margin-top: 20px;">
+        <details>
+            <summary style="font-weight: bold; color: #3498db; cursor: pointer;">📖 Legend & Glossary</summary>
+            <div style="margin-top: 15px; padding: 10px; background: #fff; border-radius: 6px; border: 1px solid #eee;">
+                {glossary_content}
+            </div>
+        </details>
+    </div>
+    """
+
+    html_content = f"""
+...
         <div class="algo-box">
             <h3>🧮 Technical Audit: Ground Truth Calculation</h3>
             {score_html}
             {sig_html}
+            {kn_html}
             <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models below.</em></small>
             
             <details style="margin-top: 15px; cursor: pointer;">
@@ -1464,7 +1507,10 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </details>
         </div>
 
+        {glossary_html}
+
         <div class="footer">
+...
             <div style="margin-bottom: 20px; color: #7f8c8d; font-size: 0.85em; font-style: italic; line-height: 1.4; border-top: 1px solid #eee; padding-top: 20px;">
                 This is an independently generated summary of the publicly available WisdomTree Daily Dashboard and CME Data. Not affiliated with, reviewed by, or approved by WisdomTree or CME Group. Third-party sources are not responsible for the accuracy of this summary. No warranties are made regarding completeness, accuracy, or timeliness; data may be delayed or incorrect.
                 <br><strong>This content is for informational purposes only and is NOT financial advice.</strong> No fiduciary or advisor-client relationship is formed. This is not an offer or solicitation to buy or sell any security. Trading involves significant risk of loss.
