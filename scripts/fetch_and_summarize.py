@@ -310,6 +310,7 @@ def fetch_live_data():
                 elif pct_change <= -2.0: trend_status = "Trending Down"
                 
                 data['sp500_current'] = round(current_close, 2)
+                data['sp500_current_date'] = current_date_str
                 data['sp500_trend_status'] = trend_status
                 data['sp500_1mo_change_pct'] = round(pct_change, 2)
                 data['sp500_trend_audit'] = f"Change from {prior_date_str} ({prior_close:.2f}) to {current_date_str} ({current_close:.2f})"
@@ -757,9 +758,10 @@ def main():
         "calculated_scores": algo_scores
     }
     
-    # Event Context
-    event_context = get_event_context(today)
-    print(f"Event Context: {json.dumps(event_context, indent=2)}")
+    # Event Context - Anchored to effective market date
+    effective_date = live_metrics.get('sp500_current_date', today)
+    event_context = get_event_context(effective_date)
+    print(f"Event Context (as of {effective_date}): {json.dumps(event_context, indent=2)}")
 
     # Phase 2: Summarization
     summary_or = "OpenRouter summary skipped."

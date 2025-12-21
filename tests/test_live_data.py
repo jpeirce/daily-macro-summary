@@ -33,6 +33,7 @@ class TestLiveData(unittest.TestCase):
         
         self.assertEqual(data['sp500_trend_status'], "Trending Up")
         self.assertEqual(data['sp500_1mo_change_pct'], 5.0)
+        self.assertEqual(data['sp500_current_date'], dates[-1].strftime('%Y-%m-%d'))
         self.assertIn(dates[-1].strftime('%Y-%m-%d'), data['sp500_trend_audit'])
         self.assertIn(dates[-22].strftime('%Y-%m-%d'), data['sp500_trend_audit'])
 
@@ -85,12 +86,12 @@ class TestLiveData(unittest.TestCase):
     @patch('yfinance.Ticker')
     @patch('fetch_and_summarize.datetime')
     def test_stale_data(self, mock_datetime, mock_ticker):
-        # Setup: Today is Monday, but data ends last Tuesday (6 days ago)
+        # Setup: Today is Monday Dec 22
         fixed_now = datetime(2025, 12, 22, 12, 0, 0) # A Monday
         mock_datetime.now.return_value = fixed_now
         
-        # Last data point is Dec 16 (Tuesday prior)
-        last_data_date = datetime(2025, 12, 16, 16, 0, 0)
+        # Last data point is Sunday Dec 14 (8 days ago)
+        last_data_date = datetime(2025, 12, 14, 16, 0, 0)
         dates = pd.date_range(end=last_data_date, periods=60, freq='B')
         mock_hist = pd.DataFrame({
             'Close': [100.0] * 60

@@ -10,7 +10,7 @@ def get_third_friday(year, month):
     fridays = [day for week in month_cal for day in week if day.weekday() == calendar.FRIDAY and day.month == month]
     return fridays[2]
 
-def get_event_context(report_date_str, lookback_days=3):
+def get_event_context(report_date_str, lookback_days=7):
     """
     Generates event context for the given date.
     
@@ -23,12 +23,25 @@ def get_event_context(report_date_str, lookback_days=3):
     """
     report_date = datetime.strptime(report_date_str, "%Y-%m-%d").date()
     
+    # Flag Normalization Mapping
+    NORM_MAP = {
+        "TRIPLE_WITCHING_CALENDAR_OVERRIDE": "TRIPLE_WITCHING",
+        "MONTHLY_OPEX_OVERRIDE": "MONTHLY_OPEX",
+        "FOMC_MEETING": "FOMC",
+        "CPI_RELEASE": "CPI",
+        "NFP_REPORT": "NFP"
+    }
+
     # Load manual calendar
     calendar_events = {}
     try:
         cal_path = os.path.join(os.path.dirname(__file__), 'event_calendar.json')
         with open(cal_path, 'r') as f:
-            calendar_events = json.load(f)
+            raw_cal = json.load(f)
+            # Normalize flags on load
+            for d, flags in raw_cal.items():
+                normalized = [NORM_MAP.get(f, f) for f in flags]
+                calendar_events[d] = normalized
     except Exception as e:
         print(f"Warning: Could not load event_calendar.json: {e}")
 
@@ -59,13 +72,6 @@ def get_event_context(report_date_str, lookback_days=3):
                 flags.append("TRIPLE_WITCHING")
 
         # Month End (Business day approx: Last weekday)
-        # Simple heuristic: if tomorrow is next month
-        # Better heuristic: check if it's the last weekday
-        last_day_of_month = calendar.monthrange(date_obj.year, date_obj.month)[1]
-        is_last_day = (date_obj.day == last_day_of_month)
-        # Or simpler: if it's a weekday and adding 1-3 days lands in next month?
-        # Let's stick to strict: Is it the last *weekday*?
-        # Get all weekdays in month
         c = calendar.Calendar()
         weekdays = [d for d in c.itermonthdates(date_obj.year, date_obj.month) if d.month == date_obj.month and d.weekday() < 5]
         if weekdays and date_obj == weekdays[-1]:
@@ -75,14 +81,12 @@ def get_event_context(report_date_str, lookback_days=3):
 
         return list(set(flags)) # Dedupe
 
-    # Check Today
+    # Check Today (Report Date)
     context["flags_today"] = check_date(report_date)
 
     # Check Recent (last N days)
     for i in range(1, lookback_days + 1):
         past_date = report_date - timedelta(days=i)
-        # Only check business days? For simplicity, check all, assuming calendar ignores weekends.
-        # But Triple Witching is always Friday. If today is Monday (lag=3), Friday was 3 days ago.
         past_flags = check_date(past_date)
         context["flags_recent"].extend(past_flags)
     
@@ -97,7 +101,9 @@ def get_event_context(report_date_str, lookback_days=3):
         "MONTH_END": "Portfolio rebalancing flows possible.",
         "QUARTER_END": "Significant window dressing and rebalancing flows likely.",
         "FOMC": "Federal Reserve meeting; expect volatility.",
-        "RUSSELL_REBALANCE": "High volume in small caps expected due to index reconstitution."
+        "RUSSELL_REBALANCE": "High volume in small caps expected due to index reconstitution.",
+        "CPI": "Consumer Price Index data release; high volatility expected.",
+        "NFP": "Non-Farm Payrolls report; high volatility expected."
     }
 
     for flag in all_flags:
