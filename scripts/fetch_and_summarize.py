@@ -846,13 +846,15 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .pdf-link a { display: inline-block; background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 5px; }
     
     /* Provenance Strip */
-    .provenance-strip { display: flex; justify-content: center; gap: 20px; background: #fff; padding: 10px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 30px; border: 1px solid #e1e4e8; font-size: 0.85em; color: #586069; }
+    .provenance-strip { position: sticky; top: 0; z-index: 1000; display: flex; justify-content: center; gap: 20px; background: #fff; padding: 10px; border-radius: 0 0 6px 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; border: 1px solid #e1e4e8; border-top: none; font-size: 0.85em; color: #586069; }
     .provenance-item { display: flex; align-items: center; gap: 6px; }
     .provenance-label { font-weight: 600; color: #24292e; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px; }
     
     .container { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 40px; }
-    .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .column { flex: 1; min-width: 350px; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); line-height: 1.75; }
     .column h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; color: #34495e; }
+    strong { font-weight: 600; color: #2c3e50; } /* Soften bold density */
+    
     .footer { text-align: center; margin-top: 40px; font-size: 0.9em; color: #666; }
     table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -875,6 +877,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .badge-gray { background: #f4f6f6; color: #7f8c8d; border: 1px solid #d5dbdb; }
     .badge-green { background: #e9f7ef; color: #27ae60; border: 1px solid #abebc6; }
     .badge-red { background: #fdedec; color: #c0392b; border: 1px solid #fadbd8; }
+    .badge-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
 
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
@@ -890,6 +893,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         .provenance-strip { color: #c9d1d9 !important; }
         .badge { filter: brightness(0.9); }
         .algo-box details div { background: #161b22 !important; color: #c9d1d9 !important; border-color: #30363d !important; }
+        .badge-warning { background: #3e3725; color: #ffca2c; border-color: #534824; }
     }
     """
     
@@ -901,6 +905,13 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     cme_date_str = extracted_metrics.get('cme_bulletin_date', 'N/A')
     spx_audit = extracted_metrics.get('sp500_trend_audit', 'N/A')
     
+    # Check for missing CME data
+    cme_warning_flag = ""
+    cme_keys_to_check = ['cme_total_volume', 'cme_total_open_interest', 'cme_rates_futures_oi_change', 'cme_equity_futures_oi_change']
+    missing_cme = [k for k in cme_keys_to_check if extracted_metrics.get(k) is None]
+    if missing_cme:
+        cme_warning_flag = f' <span class="badge badge-warning" title="Missing fields: {", ".join(missing_cme)}">⚠️ DATA INCOMPLETE</span>'
+
     # CME Staleness Check
     cme_staleness_flag = ""
     try:
@@ -913,6 +924,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             days_diff = (eff_dt - cme_dt).days
             if days_diff > 3:
                 cme_staleness_flag = f' <span class="badge badge-red" style="font-size:0.8em; padding:1px 4px;">STALE ({days_diff}d lag)</span>'
+                cme_warning_flag = cme_warning_flag # Ensure warning persists if both issues exist
             else:
                 cme_staleness_flag = ' <span class="badge badge-green" style="font-size:0.8em; padding:1px 4px;">FRESH</span>'
     except:
@@ -929,13 +941,6 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     </head>
     <body>
         <h1>Daily Macro Summary ({today})</h1>
-        <div style="text-align: center; margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em; font-style: italic;">
-            Independently generated summary. Informational use only—NOT financial advice. Full disclaimers in footer.
-        </div>
-        <div class="pdf-link">
-            <a href="{main_pdf_url}" target="_blank">📄 WisdomTree PDF</a>
-            <a href="{cme_pdf_url}" target="_blank">📊 CME Bulletin</a>
-        </div>
         
         <div class="provenance-strip">
             <div class="provenance-item">
@@ -949,30 +954,29 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </div>
         </div>
 
+        <div style="text-align: center; margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em; font-style: italic;">
+            Independently generated summary. Informational use only—NOT financial advice. Full disclaimers in footer.
+        </div>
+        <div class="pdf-link">
+            <h3>Inputs</h3>
+            <a href="{main_pdf_url}" target="_blank">📄 View WisdomTree PDF</a>
+            &nbsp;&nbsp;
+            <a href="{cme_pdf_url}" target="_blank">📊 View CME Report{cme_warning_flag}</a>
+        </div>
+
+        {kn_html}
+
         <div class="container">
             {columns_html}
         </div>
 
         <div class="algo-box">
+            <h3>🧮 Technical Audit: Ground Truth Calculation</h3>
             {score_html}
             {sig_html}
-            {kn_html}
             <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models below.</em></small>
             
             <details style="margin-top: 15px; cursor: pointer;">
-                <summary style="font-weight: bold; color: #3498db;">Show Calculation Formulas</summary>
-                <div style="margin-top: 10px; font-size: 0.9em; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    <ul style="list-style-type: disc; padding-left: 20px;">
-                        <li><strong>Liquidity Conditions:</strong> 5.0 + (log2(4.5 / HY_Spread) * 3.0) - max(0, (Real_Yield_10Y - 1.5) * 2.0)</li>
-                        <li><strong>Valuation Risk:</strong> 5.0 + ((Forward_PE - 18.0) * 0.66)</li>
-                        <li><strong>Inflation Pressure:</strong> 5.0 + ((Inflation_Expectations_5y5y - 2.25) * 10.0)</li>
-                        <li><strong>Credit Stress:</strong> 2.0 + ((HY_Spread - 3.0) * 1.6) [Min 2.0]</li>
-                        <li><strong>Growth Impulse:</strong> 5.0 + ((Yield_10Y - Yield_2Y - 0.50) * 3.5)</li>
-                        <li><strong>Risk Appetite:</strong> 10.0 - ((VIX - 10.0) * 0.5)</li>
-                    </ul>
-                    <p style="margin-top: 5px; font-style: italic;">All scores are clamped between 0.0 and 10.0.</p>
-                </div>
-            </details>
         </div>
 
         <div class="footer">
