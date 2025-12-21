@@ -393,7 +393,7 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
     
     def fmt_val(v): return f"{v:,}" if isinstance(v, int) else str(v)
     
-    def b(val):
+    def b(val, reason=""):
         c = 'badge-gray'
         v_lower = str(val).lower()
         if 'directional' in v_lower: c = 'badge-blue'
@@ -403,12 +403,21 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
         elif 'contracting' in v_lower: c = 'badge-red'
         elif 'trending up' in v_lower or (isinstance(val, str) and val.startswith('+')): c = 'badge-green'
         elif 'trending down' in v_lower or (isinstance(val, str) and val.startswith('-')): c = 'badge-red'
-        return f'<span class="badge {c}">{val}</span>'
+        return f'<span class="badge {c}" title="{reason}">{val}</span>'
+
+    # Helper to fmt deltas
+    def d(val):
+        if val is None: return "N/A"
+        return f"{val:+}"
 
     bps_change = extracted_metrics.get('ust10y_change_bps')
-    rates_text = f"Signal: {b(rt_sig.get('signal_label', 'Unknown'))}"
+    rates_text = f"Signal: {b(rt_sig.get('signal_label', 'Unknown'), rt_sig.get('gate_reason', ''))}"
     if bps_change is not None:
         rates_text += f" | 10Y Move: {bps_change:+.1f} bps (Live)"
+
+    # Add Raw Deltas to Verification
+    eq_deltas = f"[Fut: {d(eq_sig.get('futures_oi_delta'))} | Opt: {d(eq_sig.get('options_oi_delta'))}]"
+    rt_deltas = f"[Fut: {d(rt_sig.get('futures_oi_delta'))} | Opt: {d(rt_sig.get('options_oi_delta'))}]"
 
     block = f"""
 <details>
@@ -420,8 +429,8 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
 > * **CME Audit Anchors:** Totals: "{extracted_metrics.get('cme_totals_audit_label', 'N/A')}" | Rates: "{extracted_metrics.get('cme_rates_futures_audit_label', 'N/A')}" | Equities: "{extracted_metrics.get('cme_equity_futures_audit_label', 'N/A')}"
 > * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
 > * **SPX Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
-> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'))} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {eq_sig.get('direction_allowed', False)}
-> * **Rates:** {rates_text} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {rt_sig.get('direction_allowed', False)}
+> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} {eq_deltas} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {eq_sig.get('direction_allowed', False)}
+> * **Rates:** {rates_text} {rt_deltas} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {rt_sig.get('direction_allowed', False)}
 </details>
 """
     return block
