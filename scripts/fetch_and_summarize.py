@@ -1130,10 +1130,10 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         for tenor in ["2y", "3y", "5y", "10y", "tn", "30y", "ultra"]:
             t_data = tenors_data.get(tenor, {})
             is_active = tenor in active_tenors
-            row_style = "background-color: #f8f9fa; font-weight: bold;" if is_active else ""
+            row_class = "active-tenor-row" if is_active else ""
             
             tenor_rows += f"""
-            <tr style="{row_style}">
+            <tr class="{row_class}">
                 <td style="text-align: left; padding: 4px 8px;">{tenor.upper()}</td>
                 <td class="numeric" style="padding: 4px 8px;">{fmt_num(t_data.get('total_volume', 0))}</td>
                 <td class="numeric" style="padding: 4px 8px; {get_curve_color(t_data.get('oi_change', 0))}">{d(t_data.get('oi_change', 0))}</td>
@@ -1264,16 +1264,18 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     .badge-green { background: #e9f7ef; color: #27ae60; border: 1px solid #abebc6; }
     .badge-red { background: #fdedec; color: #c0392b; border: 1px solid #fadbd8; }
     .badge-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .active-tenor-row { background-color: #f8f9fa; font-weight: bold; }
 
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
         body { background: #0d1117; color: #c9d1d9; }
-        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel, .score-card { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel, .score-card, .rates-curve-panel { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
         .event-callout { background: #1c2128 !important; border-color: #444c56 !important; color: #c9d1d9 !important; }
         .event-callout strong { color: #58a6ff !important; }
         .score-label { color: #8b949e !important; }
         .signal-chip { background: #21262d !important; border-color: #30363d !important; color: #c9d1d9 !important; }
         .deterministic-tint { background-color: #1c2128 !important; border-left-color: #444c56 !important; color: #8b949e !important; }
+        .active-tenor-row { background-color: #21262d !important; }
         .toc-sidebar a { color: #c9d1d9; border-bottom-color: #21262d; }
         .toc-sidebar a:hover { background: #21262d; }
         h1, h2, h3, strong { color: #c9d1d9 !important; }
