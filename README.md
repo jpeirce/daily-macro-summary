@@ -7,21 +7,23 @@ The system uses a **Three-Pass Intelligence Architecture** to ensure accuracy an
 1.  **Extraction (Pass 1 - Vision):** Uses **Gemini 3 Pro Preview** to extract raw numerical data (Spreads, P/E Ratios, Yields, CME Volume/OI) from visual charts and dense tables.
 2.  **Ground Truth Engine (Python):**
     *   **Deterministic Scoring:** Calculates scores (0-10) for Liquidity, Valuation, etc., using fixed financial formulas.
-    *   **Live Trend Analysis:** Uses `yfinance` to fetch real-time S&P 500 data, calculating a robust 21-trading-day trend to bypass stale PDF charts.
-    *   **Event Calendar:** Detects Monthly OPEX, Triple Witching, and Month-End rebalancing via a deterministic rules engine + manual overrides.
-3.  **Summarization (Pass 3 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to an LLM to generate a strategic market outlook. Defaults to **Gemini 3 Pro Preview**, but can be configured to use **OpenRouter** models (or both for side-by-side comparison) via environment variables. Strict **Invariant Gates** and **Event Risk Gates** mandate specific phrasing and confidence downgrades based on the market regime.
+    *   **Signal Logic:** Standardizes positioning signals (Directional, Hedging-Vol, Noise) by analyzing the dominance ratio between Futures and Options OI changes.
+    *   **Live Analysis:** Fetches real-time S&P 500 trend and 10-Year Treasury Yield (`^TNX`) basis point changes to ensure narrative precision.
+    *   **Event Calendar:** Detects Monthly OPEX, Triple Witching, and Month-End rebalancing via a deterministic rules engine.
+3.  **Summarization (Pass 3 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to an LLM. Strict **Invariant Gates** mandate specific phrasing, while a post-processing **Redaction Scrubber** ensures no directional leakage occurs in sections where the signal is mathematically weak.
 
 ## 🚀 Features
 
 *   **Multi-Source Synthesis:** Combines the WisdomTree Daily Dashboard, CME Daily Bulletin (Section 01), and Yahoo Finance live data.
+*   **Deterministic Signal Gates:** Python-based logic enforces signal labels (Directional, Hedging-Vol, Noise) based on mathematical thresholds (`max(abs(futures), abs(options))`), preventing LLM hallucinations.
 *   **Event-Aware Intelligence:** Automatically detects expiry cycles (OPEX/Witching) and downgrades directional conviction when volume/OI signals may be distorted.
 *   **Guaranteed Narrative Safety:** 
-    *   **Global Constraints:** Explicitly bans "Actor Attribution" (Smart Money, Whales, Institutions).
-    *   **Post-Generation Scrubbing:** A regex validator scans and normalizes LLM output to ensure structural, neutral phrasing (e.g., *"institutional flows"* -> *"market-participant flows"*).
+    *   **Global Constraints:** Explicitly bans "Actor Attribution" (Smart Money, Whales, Institutions, Allocators).
+    *   **Post-Generation Redaction:** A surgical regex scrubber redacts directional language from specific asset sections when the deterministic signal is weak.
 *   **Interactive HTML Dashboard:**
-    *   **Audit Trail:** Prints a detailed "Data Verification" block.
-    *   **Show Formulas:** Collapsible section showing the exact Python math behind the scores.
-    *   **Inputs Section:** Direct links to the source PDFs used for the run.
+    *   **Sticky Status Bar:** Real-time chips for Signal, Direction, Trend, and Participation pinned to the top of the viewport.
+    *   **Audit Trail:** Collapsible "Data Verification" block with CME row anchors, raw signed deltas, and gate logic tooltips.
+    *   **Navigation:** Left-side mini Table of Contents for quick section jumping.
 *   **Daily Email:** Delivers the briefing to your inbox every morning.
 
 ## 🛠️ Setup
