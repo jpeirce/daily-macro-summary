@@ -214,16 +214,24 @@ Do NOT include any verification data, raw metrics, or event flags in your output
 Create a table with these 6 Dials. USE THE PRE-CALCULATED SCORES PROVIDED ABOVE.
 *In the 'Justification' column, reference the visual evidence from the CME images (Volume/OI) to support the score.*
 
-**Constraint:** You must ONLY cite numbers present in the `extracted_metrics` JSON. Do NOT "discover" or hallucinate numbers (e.g., Mag 7 growth) from the PDF text layer unless they are explicitly in the Ground Truth.
+**Constraint:** You must ONLY cite numbers present in the `extracted_metrics` JSON. Do NOT "discover" or hallucinate numbers from the PDF text layer unless they are explicitly in the Ground Truth.
+
+**Justification Rules (Metric Whitelist):**
+*   **Growth Impulse:** Must cite Yield Curve (10y-2y) or Interest Coverage. DO NOT cite HY Spreads.
+*   **Credit Stress:** Must cite High Yield (HY) Spreads.
+*   **Valuation Risk:** Must cite Forward P/E Ratio.
+*   **Liquidity Conditions:** Must cite CME Volume.
+*   **Inflation Pressure:** Must cite 5y5y Breakeven or Real Yields.
+*   **Risk Appetite:** Must cite VIX or CME Participation.
 
 | Dial | Score (0-10) | Justification (Data Source: Daily Market Snapshot + CME) |
 |---|---|---|
-| Growth Impulse | [Score] | [Brief justification] |
-| Inflation Pressure | [Score] | [Cite `inflation_expectations_5y5y` VERBATIM. Do not use "near" or "approx".] |
-| Liquidity Conditions | [Look at CME Image: Is Volume high (deep liquidity) or low?] |
-| Credit Stress | [Score] | [Brief justification] |
-| Valuation Risk | [Score] | [Brief justification] |
-| Risk Appetite | [Score] | [Cite VIX from Ground Truth. Secondary: Is CME participation expanding or contracting?] |
+| Growth Impulse | [Score] | [Cite Yield Curve (10y-2y) or Interest Coverage ONLY.] |
+| Inflation Pressure | [Score] | [Cite `inflation_expectations_5y5y` or Real Yields ONLY.] |
+| Liquidity Conditions | [Score] | [Cite CME Volume depth ONLY.] |
+| Credit Stress | [Score] | [Cite HY Spreads (OAS) ONLY.] |
+| Valuation Risk | [Score] | [Cite Forward P/E Ratio ONLY.] |
+| Risk Appetite | [Score] | [Cite VIX or CME Participation ONLY.] |
 
 ### 2. Executive Takeaway [SECTION:SUMMARY]
 [Regime Name, The Driver, The Pivot]
@@ -932,6 +940,56 @@ def clean_llm_output(text, cme_signals=None):
         
         if filter_applied and "Note: Automatic direction filter applied" not in text:
             text += "\n\n*(Note: Automatic direction filter applied to non-directional signal sections)*"
+
+    # Pass 4: Scoreboard Justification Validator
+    lines = text.split('\n')
+    in_scoreboard = False
+    new_lines_pass4 = []
+    
+    # Constraints Mapping (Dial -> Forbidden Keywords)
+    sb_constraints = {
+        "Growth Impulse": ["spread", "credit", "hyg", "junk", "default"],
+        "Liquidity Conditions": ["spread", "hyg", "junk", "credit", "default"], 
+        "Credit Stress": ["p/e", "valuation", "earnings", "curve", "slope", "10y", "2y", "yield"],
+        "Valuation Risk": ["spread", "credit", "vix", "curve", "yield", "slope"],
+        "Inflation Pressure": ["vix", "participation", "volume", "p/e", "valuation"],
+        "Risk Appetite": ["p/e", "valuation", "earnings", "curve", "slope"]
+    }
+
+    for line in lines:
+        if "### 1. The Dashboard" in line:
+            in_scoreboard = True
+        elif line.startswith("### ") and "1. The Dashboard" not in line:
+            in_scoreboard = False
+        
+        if in_scoreboard and line.strip().startswith("|") and "Score" not in line and "---" not in line:
+            # Table row processing
+            parts = [p.strip() for p in line.split('|')]
+            if len(parts) >= 4: # | Dial | Score | Justif |
+                dial_name = parts[1]
+                justification = parts[3].lower()
+                
+                # Check for constraints
+                forbidden_found = False
+                for dial_key, forbidden_list in sb_constraints.items():
+                    if dial_key in dial_name: # Partial match "Growth Impulse"
+                        for word in forbidden_list:
+                            # Use regex word boundary to avoid partial matches (e.g. "expensive" containing "p/e"?) No, simple string match is risky.
+                            # "yield" matches "yields". "spread" matches "spreads".
+                            # But "spread" matches "widespread" (unlikely in this context but possible).
+                            # Let's use regex for safety.
+                            if re.search(r'\b' + re.escape(word) + r'\w*', justification):
+                                forbidden_found = True
+                                break
+                    if forbidden_found: break
+                
+                if forbidden_found:
+                    parts[3] = " (Needs revision: out-of-scope metric cited)"
+                    line = "|".join(parts)
+        
+        new_lines_pass4.append(line)
+    
+    text = "\n".join(new_lines_pass4)
 
     # Inject TOC Anchors
     text = re.sub(r"(?i)(### 1\. The Dashboard.*SECTION:DASHBOARD\])", r'<a id="scoreboard"></a>\n\1', text)
