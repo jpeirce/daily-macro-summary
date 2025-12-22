@@ -50,9 +50,9 @@ Controlled via environment variables or workflow files:
 
 The system is automated via GitHub Actions workflows:
 
-### 1. Daily WisdomTree Summary (`summary.yml`)
+### 1. Daily Macro Summary (`daily_macro.yml`)
 *   **Schedule:** Runs automatically at **17:00 UTC (10:00 AM MST)** on market days (Mon-Fri).
-*   **Manual Trigger:** Go to **Actions** -> **Daily WisdomTree Summary** -> **Run workflow**.
+*   **Manual Trigger:** Go to **Actions** -> **Daily Macro Summary** -> **Run workflow**.
 *   **Output:** Updates the `index.html` report on GitHub Pages.
 
 ### 2. Benchmark Arena (`benchmark.yml`)
