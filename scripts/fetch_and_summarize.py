@@ -503,8 +503,8 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
     block = f"""
 <div class="algo-box" style="margin-bottom: 10px; padding: 10px;">
     <strong>Audit Summary:</strong> 
-    {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} Equities ({eq_dir_str}) &nbsp;|&nbsp; 
-    {b(rt_sig.get('signal_label', 'Unknown'), rt_sig.get('gate_reason', ''))} Rates ({rt_dir_str})
+    {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} Equities ({b(eq_dir_str)}) &nbsp;|&nbsp; 
+    {b(rt_sig.get('signal_label', 'Unknown'), rt_sig.get('gate_reason', ''))} Rates ({b(rt_dir_str)})
 </div>
 
 <details>
@@ -516,8 +516,8 @@ def generate_verification_block(effective_date, extracted_metrics, cme_signals, 
 > * **CME Audit Anchors:** Totals: "{extracted_metrics.get('cme_totals_audit_label', 'N/A')}" | Rates: "{extracted_metrics.get('cme_rates_futures_audit_label', 'N/A')}" | Equities: "{extracted_metrics.get('cme_equity_futures_audit_label', 'N/A')}"
 > * **Date Check:** Report Date: {effective_date} | SPX Trend Source: yfinance
 > * **SPX Trend Audit:** {extracted_metrics.get('sp500_trend_audit', 'N/A')}
-> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} {eq_deltas} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {eq_dir_str}
-> * **Rates:** {rates_text} {rt_deltas} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {rt_dir_str}
+> * **Equities:** Signal: {b(eq_sig.get('signal_label', 'Unknown'), eq_sig.get('gate_reason', ''))} {eq_deltas} | Part.: {b(eq_sig.get('participation_label', 'Unknown'))} | Trend: {extracted_metrics.get('sp500_trend_status', 'Unknown')} | Dir: {b(eq_dir_str)}
+> * **Rates:** {rates_text} {rt_deltas} | Part.: {b(rt_sig.get('participation_label', 'Unknown'))} | Dir: {b(rt_dir_str)}
 </details>
 """
     return block
