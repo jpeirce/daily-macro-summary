@@ -1,15 +1,13 @@
-name: Daily WisdomTree Summary
+name: Benchmark Arena
 
 on:
-  schedule:
-    - cron: '0 17 * * 1-5' # 10am MST / 5pm UTC, Mon-Fri
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  run-summary:
+  run-benchmark:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,26 +22,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           
-      - name: Run summarizer
+      - name: Run Benchmark
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           AI_STUDIO_API_KEY: ${{ secrets.AI_STUDIO_API_KEY }}
           SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
-          SUMMARIZE_PROVIDER: GEMINI
+          # Force Benchmark Mode
+          RUN_MODE: BENCHMARK
+          SUMMARIZE_PROVIDER: ALL
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python scripts/fetch_and_summarize.py
         
-      - name: Archive summaries
+      - name: Archive benchmark report
         uses: actions/upload-artifact@v4
         with:
-          name: daily-summaries
-          path: summaries/
+          name: benchmark-report
+          path: summaries/benchmark.html
           
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./summaries
+          # Vital: Keep daily summary (index.html) intact
           keep_files: true
