@@ -75,3 +75,11 @@ The system is automated via GitHub Actions workflows:
 2.  **Install:** `pip install -r requirements.txt`
 3.  **Set Env:** Provide API keys in your environment.
 4.  **Run:** `python scripts/fetch_and_summarize.py`
+
+## ⚠️ Disclaimer
+
+This project is an independently generated summary of the publicly available WisdomTree Daily Dashboard and CME Data. It is not affiliated with, reviewed by, or approved by WisdomTree or CME Group. Third-party sources are not responsible for the accuracy of this summary.
+
+**This content is for informational purposes only and is NOT financial advice.** No fiduciary or advisor-client relationship is formed. This is not an offer or solicitation to buy or sell any security. Trading involves significant risk of loss.
+
+Use at your own risk; the author disclaims liability for any losses or decisions made based on this content. Consult a qualified financial professional. Past performance is not indicative of future results. Automated extraction and AI analysis may contain errors or misinterpretations.

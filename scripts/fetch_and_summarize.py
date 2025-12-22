@@ -26,8 +26,9 @@ GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "jpeirce/daily-macro-summary"
 
 PDF_SOURCES = {
     "wisdomtree": "https://www.wisdomtree.com/investments/-/media/us-media-files/documents/resource-library/daily-dashboard.pdf",
-    "cme_vol": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf",
-    "cme_sec09": "https://www.cmegroup.com/daily_bulletin/current/Section09_Interest_Rate_Futures.pdf"
+    "cme_sec01": "https://www.cmegroup.com/daily_bulletin/current/Section01_Exchange_Overall_Volume_And_Open_Interest.pdf",
+    "cme_sec09": "https://www.cmegroup.com/daily_bulletin/current/Section09_Interest_Rate_Futures.pdf",
+    "cme_sec11": "https://www.cmegroup.com/daily_bulletin/current/Section11_Equity_And_Index_Futures.pdf"
 }
 OPENROUTER_MODEL = "openai/gpt-5.2" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
@@ -152,6 +153,71 @@ JSON OUTPUT SCHEMA:
 }
 """
 
+EXTRACTION_PROMPT_SEC11 = """
+Role: You are a specialized financial OCR engine.
+Task: Extract structured data from CME Daily Bulletin Section 11 (Equity & Index Futures).
+Focus: Extract the "TOTAL" summary lines for specific US Equity Index products.
+
+Target Products (Anchors):
+1. E-MINI S&P 500 (Anchor: "TOTAL EMINI S&P FUT")
+2. E-MINI NASDAQ-100 (Anchor: "TOTAL EMINI NASD FUT")
+3. E-MINI DOW ($5) (Anchor: "TOTAL MINI $5 DOW FUT")
+4. E-MINI MIDCAP 400 (Anchor: "TOTAL E-400 MIDCAP F")
+5. E-MINI SMALLCAP 600 (Anchor: "TOTAL E-600 SMLCAP F")
+
+JSON Output Schema:
+{
+  "bulletin_date": "YYYY-MM-DD",
+  "is_preliminary": boolean,
+  "products": {
+    "es": {
+      "row_label": "TOTAL EMINI S&P FUT ...",
+      "total_volume": integer,
+      "open_interest": integer,
+      "oi_change": integer (signed)
+    },
+    "nq": {
+      "row_label": "TOTAL EMINI NASD FUT ...",
+      "total_volume": integer,
+      "open_interest": integer,
+      "oi_change": integer (signed)
+    },
+    "ym": {
+      "row_label": "TOTAL MINI $5 DOW FUT ...",
+      "total_volume": integer,
+      "open_interest": integer,
+      "oi_change": integer (signed)
+    },
+    "mid": {
+      "row_label": "TOTAL E-400 MIDCAP F ...",
+      "total_volume": integer,
+      "open_interest": integer,
+      "oi_change": integer (signed)
+    },
+    "sml": {
+      "row_label": "TOTAL E-600 SMLCAP F ...",
+      "total_volume": integer,
+      "open_interest": integer,
+      "oi_change": integer (signed)
+    }
+  },
+  "data_quality_notes": ["List any issues, e.g., 'PRELIMINARY' flag found", "Missing NQ row"]
+}
+
+Extraction Rules:
+1. Locate the header row containing the Bulletin Date.
+2. Locate the "TOTAL <PRODUCT>" line for each target.
+3. On the TOTAL line, the numbers typically follow the product name.
+   - Example: "TOTAL EMINI S&P FUT 77573 1348486 2389268 - 64"
+   - Map:
+     - 77573 -> Pit Volume (Ignore)
+     - 1348486 -> Total Volume
+     - 2389268 -> Open Interest
+     - -64 -> OI Change
+4. Handle "UNCH" as 0.
+5. If a product is not found, set its value to null.
+"""
+
 BENCHMARK_DATA_SYSTEM_PROMPT = """
 Role: You are a macro strategist for a top-tier hedge fund.
 Task: Analyze the provided Ground Truth Data (JSON) to produce a strategic, easy-to-digest market outlook.
@@ -210,6 +276,7 @@ Inputs Provided:
 1. **WisdomTree Dashboard:** General macro/market context.
 2. **CME Bulletin (Section 01):** Volume and Open Interest totals.
 3. **CME Rates Curve (Section 09):** Treasury futures yield curve positioning.
+4. **CME Equity Index Futures (Section 11):** S&P, Nasdaq, Dow flows.
 
 Format Constraints:
 Length: Total output must be 700–1,000 words.
@@ -752,6 +819,53 @@ def calculate_deterministic_scores(extracted_data):
     print(f"Calculated Scores: {scores}")
     return scores, details
 
+def process_cme_sec11(sec11_data):
+    """
+    Cleans and structures the raw Section 11 extraction.
+    Returns a dictionary with 'products' and 'totals'.
+    """
+    if not sec11_data: return {}
+    
+    raw_products = sec11_data.get("products", {})
+    processed = {}
+    
+    total_volume = 0
+    total_oi = 0
+    total_oi_change = 0
+    
+    for key, p_data in raw_products.items():
+        if not p_data: continue
+        
+        # Parse integers
+        vol = parse_int_token(p_data.get("total_volume")) or 0
+        oi = parse_int_token(p_data.get("open_interest")) or 0
+        oi_chg = parse_int_token(p_data.get("oi_change")) or 0
+        
+        processed[key] = {
+            "label": p_data.get("row_label", "Unknown").split(" TOTAL")[0].strip(), # Clean up label
+            "volume": vol,
+            "oi": oi,
+            "oi_change": oi_chg
+        }
+        
+        total_volume += vol
+        total_oi += oi
+        total_oi_change += oi_chg
+        
+    return {
+        "products": processed,
+        "aggregates": {
+            "total_volume": total_volume,
+            "total_oi": total_oi,
+            "total_oi_change": total_oi_change
+        },
+        "quality": {
+            "notes": sec11_data.get("data_quality_notes", []),
+            "is_preliminary": sec11_data.get("is_preliminary", False),
+            "bulletin_date": sec11_data.get("bulletin_date")
+        }
+    }
+
 def process_cme_sec09(raw_data):
     """
     Process raw CME Section 09 extraction into a deterministic rates curve object.
@@ -888,14 +1002,19 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context, model_override=
             images.extend(pdf_to_images(pdf_paths["wisdomtree"]))
         
         # Then CME (limit pages to first 1 since it's a summary sheet)
-        if "cme_vol" in pdf_paths:
-            cme_images = pdf_to_images(pdf_paths["cme_vol"])
+        if "cme_sec01" in pdf_paths:
+            cme_images = pdf_to_images(pdf_paths["cme_sec01"])
             images.extend(cme_images[:1]) # Just the first page
 
         # And CME Rates Curve (Section 09) - First page usually has the summary table
         if "cme_sec09" in pdf_paths:
             sec09_images = pdf_to_images(pdf_paths["cme_sec09"])
             images.extend(sec09_images[:1])
+
+        # And CME Equity Flows (Section 11) - First page usually has the summary table
+        if "cme_sec11" in pdf_paths:
+            sec11_images = pdf_to_images(pdf_paths["cme_sec11"])
+            images.extend(sec11_images[:1])
     
     if RUN_MODE == "BENCHMARK":
         formatted_prompt = BENCHMARK_SYSTEM_PROMPT + f"\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
@@ -1352,6 +1471,51 @@ def render_signals_panel(cme_signals):
     <div class="signals-panel">
         {sig_panel_item('Equities', cme_signals.get('equity', {}))}
         {sig_panel_item('Rates', cme_signals.get('rates', {}))}
+    </div>
+    """
+
+def render_equity_flows_panel(equity_data):
+    if not equity_data or not equity_data.get("products"): return ""
+    
+    products = equity_data.get("products", {})
+    
+    # Define display order
+    display_order = [
+        ("es", "S&P 500", "#2c3e50"), 
+        ("nq", "NASDAQ", "#8e44ad"), 
+        ("ym", "DOW", "#2980b9"), 
+        ("mid", "MID 400", "#7f8c8d"), 
+        ("sml", "SML 600", "#7f8c8d")
+    ]
+    
+    rows = ""
+    for key, label, color in display_order:
+        p = products.get(key)
+        if not p: continue
+        
+        # Color OI Change
+        oi_chg = p.get("oi_change", 0)
+        oi_color = "#27ae60" if oi_chg > 0 else "#e74c3c" if oi_chg < 0 else "#7f8c8d"
+        
+        rows += f"""
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #f1f1f1; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: {color};">{label}</div>
+            <div style="display: flex; gap: 15px;">
+                <span title="Total Volume" style="color: #555;">Vol: {fmt_num(p.get('volume'))}</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: {oi_color}; min-width: 60px; text-align: right;">{fmt_delta(oi_chg)}</span>
+            </div>
+        </div>
+        """
+        
+    return f"""
+    <div style="background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 15px; margin-bottom: 20px;">
+        <div style="border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; font-weight: bold; color: #2c3e50; font-size: 0.95em;">
+            US Equity Index Flows (CME)
+        </div>
+        {rows}
+        <div style="margin-top: 8px; font-size: 0.8em; color: #999; text-align: right; font-style: italic;">
+            Source: Daily Bulletin Sec. 11
+        </div>
     </div>
     """
 
@@ -2013,11 +2177,12 @@ def main():
     # Phase 1: Ground Truth Extraction
     extracted_metrics = {}
     sec09_raw = {}
+    sec11_raw = {}
     algo_scores = {}
     
     if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
         # 1. Main Extraction (WisdomTree + CME Vol)
-        main_pdfs = {k: v for k, v in pdf_paths.items() if k in ['wisdomtree', 'cme_vol']}
+        main_pdfs = {k: v for k, v in pdf_paths.items() if k in ['wisdomtree', 'cme_sec01']}
         extracted_metrics = extract_metrics_gemini(main_pdfs)
         
         # 2. Section 09 Extraction (CME Rates Curve)
@@ -2025,9 +2190,16 @@ def main():
         if sec09_pdf:
             print("Extracting CME Section 09 (Rates Curve)...")
             sec09_raw = extract_metrics_gemini(sec09_pdf, prompt_override=EXTRACTION_PROMPT_SEC09)
+
+        # 3. Section 11 Extraction (Equity Index)
+        sec11_pdf = {k: v for k, v in pdf_paths.items() if k == 'cme_sec11'}
+        if sec11_pdf:
+            print("Extracting CME Section 11 (Equity Index)...")
+            sec11_raw = extract_metrics_gemini(sec11_pdf, prompt_override=EXTRACTION_PROMPT_SEC11)
     
     # Process Curve Data
     cme_rates_curve = process_cme_sec09(sec09_raw)
+    cme_equity_flows = process_cme_sec11(sec11_raw)
     
     # Fetch Live Fallbacks (VIX)
     live_metrics = fetch_live_data()
@@ -2060,7 +2232,8 @@ def main():
             "equity": equity_signal,
             "rates": rates_signal
         },
-        "cme_rates_curve": cme_rates_curve
+        "cme_rates_curve": cme_rates_curve,
+        "cme_equity_flows": cme_equity_flows
     }
     
     # Event Context - Anchored to effective market date
@@ -2105,7 +2278,7 @@ def main():
         
         # Save & Report
         os.makedirs("summaries", exist_ok=True)
-        generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context, cme_rates_curve)
+        generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context, cme_rates_curve, cme_equity_flows)
         
         # Email (Production Only)
         repo_name = GITHUB_REPOSITORY.split("/")[-1]
