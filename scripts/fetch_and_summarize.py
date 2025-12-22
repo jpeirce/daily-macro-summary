@@ -1397,6 +1397,11 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     <body>
         <h1>Daily Macro Summary ({today})</h1>
         
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
+            <span class="badge badge-gray">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}</span>
+            <span class="badge badge-blue">Data as of: {wt_date_str} / {cme_date_str}</span>
+        </div>
+        
         <div class="provenance-strip" style="flex-wrap: wrap;">
             <div class="provenance-item">
                 <span class="provenance-label">Dates:</span>
