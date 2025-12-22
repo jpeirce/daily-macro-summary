@@ -382,7 +382,7 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
     generated_time = datetime.now().strftime('%Y-%m-%d %H:%M UTC')
     wt_date = extracted_metrics.get('wisdomtree_as_of_date', 'Unknown')
     cme_date = extracted_metrics.get('cme_bulletin_date', 'Unknown')
-    mode_label = 'Data-Driven (JSON)' if 'data' in filename else 'Visual (PDFs)'
+    mode_label = 'JSON (extracted by Gemini)' if 'data' in filename else 'Visual (PDFs)'
 
     # Render Header Components
     header_html = ""
@@ -544,7 +544,13 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
     </head>
     <body>
         <h1>Benchmark Arena: Daily Macro Summary ({today})</h1>
-        <p style="text-align:center; color:#666;">Mode: {'Data-Driven (JSON)' if 'JSON' in filename else 'Visual (PDFs)'}</p>
+        
+        <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
+            <span class="badge badge-gray timestamp-badge" data-utc="{generated_time}">Generated: {generated_time}</span>
+            <span class="badge badge-blue">Data as of: WT: {wt_date} / CME: {cme_date}</span>
+        </div>
+        
+        <p style="text-align:center; color:#666; margin-top: -10px;">Mode: {mode_label}</p>
         
         {header_html}
         {rates_html}
