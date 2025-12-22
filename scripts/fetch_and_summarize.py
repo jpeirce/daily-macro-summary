@@ -898,7 +898,7 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context, model_override=
             images.extend(sec09_images[:1])
     
     if RUN_MODE == "BENCHMARK":
-        formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+        formatted_prompt = BENCHMARK_SYSTEM_PROMPT + f"\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     elif RUN_MODE == "BENCHMARK_JSON":
         formatted_prompt = BENCHMARK_DATA_SYSTEM_PROMPT + f"\n\nGround Truth Data:\n{json.dumps(ground_truth, indent=2)}\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     else:
@@ -941,7 +941,7 @@ def summarize_gemini(pdf_paths, ground_truth, event_context):
     model = genai.GenerativeModel(GEMINI_MODEL)
     
     if RUN_MODE == "BENCHMARK":
-        formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+        formatted_prompt = BENCHMARK_SYSTEM_PROMPT + f"\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     elif RUN_MODE == "BENCHMARK_JSON":
         formatted_prompt = BENCHMARK_DATA_SYSTEM_PROMPT + f"\n\nGround Truth Data:\n{json.dumps(ground_truth, indent=2)}\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     else:
