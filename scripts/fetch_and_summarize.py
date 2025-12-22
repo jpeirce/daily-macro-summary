@@ -1411,7 +1411,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     for category, items in glossary_items:
         glossary_content += f"<div style='margin-bottom: 15px;'><h4 style='margin-bottom:8px; border-bottom:1px solid #eee;'>{category}</h4>"
         for label, color, desc in items:
-            glossary_content += f"<div style='margin-bottom: 4px;'><span class='badge badge-{color}' style='width: 120px; text-align: center;'>{label}</span> <span style='font-size: 0.9em; color: #666;'>{desc}</span></div>"
+            glossary_content += f"<div style='margin-bottom: 4px;'><span class='badge badge-{color}' style='min-width: 120px; width: auto; text-align: center; display: inline-block;'>{label}</span> <span style='font-size: 0.9em; color: #666;'>{desc}</span></div>"
         glossary_content += "</div>"
 
     glossary_html = f"""
