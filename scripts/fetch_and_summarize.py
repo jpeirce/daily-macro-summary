@@ -152,6 +152,56 @@ JSON OUTPUT SCHEMA:
 }
 """
 
+BENCHMARK_DATA_SYSTEM_PROMPT = """
+Role: You are a macro strategist for a top-tier hedge fund.
+Task: Analyze the provided Ground Truth Data (JSON) to produce a strategic, easy-to-digest market outlook.
+
+Inputs Provided:
+1. **Ground Truth Metrics:** Extracted numerical data from WisdomTree & CME.
+2. **Event Context:** Active market events (e.g., OPEX).
+
+Format Constraints:
+Length: Total output must be 700–1,000 words.
+Tables: The "Dashboard Scoreboard" is the only table allowed.
+Formatting: Use '###' for all section headers.
+
+Output Structure:
+
+### 1. The Dashboard (Scoreboard)
+
+Create a table with these 6 Dials. CALCULATE THE SCORES YOURSELF (0-10) based on the provided metrics.
+
+| Dial | Score (0-10) | Justification (Data Source: Provided JSON) |
+|---|---|---|
+| Growth Impulse | [Score] | [Brief justification] |
+| Inflation Pressure | [Score] | [Brief justification] |
+| Liquidity Conditions | [Score] | [Brief justification] |
+| Credit Stress | [Score] | [Brief justification] |
+| Valuation Risk | [Score] | [Brief justification] |
+| Risk Appetite | [Score] | [Brief justification] |
+
+### 2. Executive Takeaway (5–7 sentences)
+[Regime Name, The Driver, The Pivot]
+
+### 3. The "Fiscal Dominance" Check (Monetary Stress)
+[Data, Implication]
+
+### 4. Rates & Curve Profile
+[Shape, Implication]
+
+### 5. The "Canary in the Coal Mine" (Credit Stress)
+[Data, Implication]
+
+### 6. The "Engine Room" (Market Breadth)
+[Data, Implication]
+
+### 7. Valuation & "Smart Money"
+[Data, International, Implication]
+
+### 8. Conclusion & Trade Tilt
+[Cross-Asset Confirmation, Risk Rating, The Trade, Triggers]
+"""
+
 BENCHMARK_SYSTEM_PROMPT = """
 Role: You are a macro strategist for a top-tier hedge fund.
 Task: Analyze the provided visual inputs to produce a strategic, easy-to-digest market outlook.
@@ -830,29 +880,27 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context, model_override=
     print(f"Summarizing with OpenRouter ({target_model})...")
     if not OPENROUTER_API_KEY: return "Error: Key missing"
     
-    # Process images for ALL PDFs
+    # Process images for ALL PDFs (Skip if BENCHMARK_JSON)
     images = []
-    # Only prioritize WisdomTree visuals for summarization context if cost/time is concern,
-    # but for completeness, we can send all.
-    # Note: Nemotron might struggle with >10 pages. 
-    # Let's prioritize 'wisdomtree' then 'cme_vol'.
-    
-    # Logic: Convert WisdomTree first
-    if "wisdomtree" in pdf_paths:
-        images.extend(pdf_to_images(pdf_paths["wisdomtree"]))
-    
-    # Then CME (limit pages to first 1 since it's a summary sheet)
-    if "cme_vol" in pdf_paths:
-        cme_images = pdf_to_images(pdf_paths["cme_vol"])
-        images.extend(cme_images[:1]) # Just the first page
+    if RUN_MODE != "BENCHMARK_JSON":
+        # Logic: Convert WisdomTree first
+        if "wisdomtree" in pdf_paths:
+            images.extend(pdf_to_images(pdf_paths["wisdomtree"]))
+        
+        # Then CME (limit pages to first 1 since it's a summary sheet)
+        if "cme_vol" in pdf_paths:
+            cme_images = pdf_to_images(pdf_paths["cme_vol"])
+            images.extend(cme_images[:1]) # Just the first page
 
-    # And CME Rates Curve (Section 09) - First page usually has the summary table
-    if "cme_sec09" in pdf_paths:
-        sec09_images = pdf_to_images(pdf_paths["cme_sec09"])
-        images.extend(sec09_images[:1])
+        # And CME Rates Curve (Section 09) - First page usually has the summary table
+        if "cme_sec09" in pdf_paths:
+            sec09_images = pdf_to_images(pdf_paths["cme_sec09"])
+            images.extend(sec09_images[:1])
     
     if RUN_MODE == "BENCHMARK":
         formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+    elif RUN_MODE == "BENCHMARK_JSON":
+        formatted_prompt = BENCHMARK_DATA_SYSTEM_PROMPT + f"\n\nGround Truth Data:\n{json.dumps(ground_truth, indent=2)}\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     else:
         formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
             ground_truth_json=json.dumps(ground_truth, indent=2),
@@ -894,6 +942,8 @@ def summarize_gemini(pdf_paths, ground_truth, event_context):
     
     if RUN_MODE == "BENCHMARK":
         formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+    elif RUN_MODE == "BENCHMARK_JSON":
+        formatted_prompt = BENCHMARK_DATA_SYSTEM_PROMPT + f"\n\nGround Truth Data:\n{json.dumps(ground_truth, indent=2)}\n\nEvent Context:\n{json.dumps(event_context, indent=2)}"
     else:
         formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
             ground_truth_json=json.dumps(ground_truth, indent=2),
@@ -901,12 +951,18 @@ def summarize_gemini(pdf_paths, ground_truth, event_context):
         )
     
     content = [formatted_prompt]
-    try:
-        for name, path in pdf_paths.items():
-            f = genai.upload_file(path, mime_type="application/pdf")
-            content.append(f"Document: {name}")
-            content.append(f)
+    
+    # Only upload PDFs if NOT in BENCHMARK_JSON mode
+    if RUN_MODE != "BENCHMARK_JSON":
+        try:
+            for name, path in pdf_paths.items():
+                f = genai.upload_file(path, mime_type="application/pdf")
+                content.append(f"Document: {name}")
+                content.append(f)
+        except Exception as e:
+            return f"Gemini Upload Error: {e}"
             
+    try:
         response = model.generate_content(content)
         return response.text
     except Exception as e:
@@ -1099,8 +1155,8 @@ def get_score_color(category, score):
         
     return "#2c3e50" 
 
-def generate_benchmark_html(today, summaries):
-    print("Generating Benchmark HTML report...")
+def generate_benchmark_html(today, summaries, filename="benchmark.html"):
+    print(f"Generating Benchmark HTML report ({filename})...")
     
     options = ""
     divs = ""
@@ -1155,6 +1211,7 @@ def generate_benchmark_html(today, summaries):
     </head>
     <body>
         <h1>Benchmark Arena: Daily Macro Summary ({today})</h1>
+        <p style="text-align:center; color:#666;">Mode: {'Data-Driven (JSON)' if 'JSON' in filename else 'Visual (PDFs)'}</p>
         
         <div class="controls">
             <label for="model-select"><strong>Select Model:</strong></label>
@@ -1172,15 +1229,11 @@ def generate_benchmark_html(today, summaries):
     </html>
     """
     
-    with open("summaries/benchmark.html", "w", encoding="utf-8") as f:
+    # Save to specific filename
+    os.makedirs("summaries", exist_ok=True)
+    with open(f"summaries/{filename}", "w", encoding="utf-8") as f:
         f.write(html)
-        
-    # Archive Copy
-    os.makedirs("archive", exist_ok=True)
-    archive_path = f"archive/benchmark_{today}.html"
-    with open(archive_path, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"HTML report generated and archived to {archive_path}")
+    print(f"HTML report generated and saved to summaries/{filename}")
 
 def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None, rates_curve=None):
     print("Generating HTML report...")
@@ -1870,8 +1923,8 @@ def main():
 
     # Phase 2: Summarization
     
-    if RUN_MODE == "BENCHMARK":
-        print("--- RUNNING BENCHMARK MODE ---")
+    if RUN_MODE.startswith("BENCHMARK"):
+        print(f"--- RUNNING {RUN_MODE} MODE ---")
         summaries = {}
         
         # 1. Run Gemini Native
@@ -1887,8 +1940,8 @@ def main():
             summaries[model] = summarize_openrouter(pdf_paths, ground_truth_context, event_context, model_override=model)
             
         # Save Report
-        os.makedirs("summaries", exist_ok=True)
-        generate_benchmark_html(today, summaries)
+        target_file = "benchmark_data.html" if RUN_MODE == "BENCHMARK_JSON" else "benchmark.html"
+        generate_benchmark_html(today, summaries, filename=target_file)
         
     else:
         # PRODUCTION MODE

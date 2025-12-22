@@ -42,7 +42,7 @@ Required for the GitHub Actions pipeline:
 
 ### Configuration
 Controlled via environment variables or workflow files:
-*   `RUN_MODE`: Set to `PRODUCTION` (Strict Gates) or `BENCHMARK` (Raw Model Reasoning).
+*   `RUN_MODE`: Set to `PRODUCTION` (Strict Gates), `BENCHMARK` (Visual Reasoning), or `BENCHMARK_JSON` (Pure Data Reasoning).
 *   `SUMMARIZE_PROVIDER`: Set to `GEMINI` (default), `OPENROUTER`, or `ALL` (enables side-by-side comparison in the HTML report).
 *   `GEMINI_MODEL`: Set to `gemini-3-pro-preview`.
 
@@ -55,14 +55,15 @@ The system is automated via GitHub Actions workflows:
 *   **Manual Trigger:** Go to **Actions** -> **Daily Macro Summary** -> **Run workflow**.
 *   **Output:** Updates the `index.html` report on GitHub Pages.
 
-### 2. Benchmark Arena (`benchmark.yml`)
-*   **Trigger:** Manual only. Go to **Actions** -> **Benchmark Arena** -> **Run workflow**.
-*   **Purpose:** Runs the "Score Yourself" logic against a roster of 7+ top-tier models (Claude 4.5, GPT-5.2, Grok, etc.) using all available PDF inputs.
-*   **Output:** Updates the `benchmark.html` report on GitHub Pages.
+### 3. Benchmark Arena (Data Only) (`benchmark_data.yml`)
+*   **Trigger:** Manual only. Go to **Actions** -> **Benchmark Arena (Data Only)** -> **Run workflow**.
+*   **Purpose:** Runs the same "Score Yourself" logic but feeds the models **extracted JSON data** instead of raw PDFs. This isolates reasoning ability from vision/OCR capabilities.
+*   **Output:** Updates the `benchmark_data.html` report on GitHub Pages.
 
 ## 📈 Live Dashboards
 *   **[Daily Macro Summary](https://jpeirce.github.io/daily-macro-summary/)**
-*   **[Benchmark Arena](https://jpeirce.github.io/daily-macro-summary/benchmark.html)** (Unconstrained Model Testing)
+*   **[Benchmark Arena (Visual)](https://jpeirce.github.io/daily-macro-summary/benchmark.html)** (Unconstrained Model Testing)
+*   **[Benchmark Arena (Data)](https://jpeirce.github.io/daily-macro-summary/benchmark_data.html)** (Pure Reasoning Test)
 
 ## Running Locally
 1.  **Clone:** `git clone https://github.com/jpeirce/daily-macro-summary.git`
