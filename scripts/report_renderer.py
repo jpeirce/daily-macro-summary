@@ -446,7 +446,7 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
         th { background-color: #21262d; color: #c9d1d9; border-color: #30363d; }
         td { color: #c9d1d9; border-color: #30363d; }
         a { color: #58a6ff; }
-        .key-numbers, .provenance-strip, .rates-curve-panel, .algo-box, .score-card { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .key-numbers, .provenance-strip, .rates-curve-panel, .algo-box, .score-card, .signal-chip { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
         .key-number-value, .score-value, .curve-value { color: #c9d1d9 !important; }
         .key-number-label, .score-label, .curve-label, .provenance-label { color: #8b949e !important; }
         .badge { filter: brightness(0.9); }
@@ -643,7 +643,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     /* Native Dark Mode */
     @media (prefers-color-scheme: dark) {
         body { background: #0d1117; color: #c9d1d9; }
-        .column, .algo-box, .score-grid > div, .footer, .key-numbers, .provenance-strip, .toc-sidebar, .signals-panel, .score-card, .rates-curve-panel { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
+        .key-numbers, .provenance-strip, .rates-curve-panel, .algo-box, .score-card, .signal-chip { background: #161b22 !important; border-color: #30363d !important; box-shadow: none !important; }
         .event-callout { background: #1c2128 !important; border-color: #444c56 !important; color: #c9d1d9 !important; }
         .event-callout strong { color: #58a6ff !important; }
         .score-label { color: #8b949e !important; }
