@@ -1463,7 +1463,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <span class="badge badge-blue">Data as of: WT: {display_wt_date} / CME: {display_cme_date}</span>
         </div>
         
-        <div class="provenance-strip" style="flex-wrap: wrap;">
+        <div class="provenance-strip">
             <div class="provenance-item">
                 <span class="provenance-label">Equities:</span>
                 {make_chip('Pos', eq_sig_label, "Positioning Signal: Based on Futures vs Options dominance")}
