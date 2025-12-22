@@ -2,7 +2,7 @@ import os
 import json
 import markdown
 from datetime import datetime
-from .config import PDF_SOURCES, GEMINI_MODEL, OPENROUTER_MODEL
+from config import PDF_SOURCES, GEMINI_MODEL, OPENROUTER_MODEL
 
 # --- HTML Rendering Helpers ---
 
