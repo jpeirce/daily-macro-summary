@@ -1584,6 +1584,7 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
     extracted_metrics = ground_truth.get('extracted_metrics', {}) if ground_truth else {}
     cme_signals = ground_truth.get('cme_signals', {}) if ground_truth else {}
     rates_curve = ground_truth.get('cme_rates_curve', {}) if ground_truth else {}
+    equity_flows = ground_truth.get('cme_equity_flows', {}) if ground_truth else {}
     scores = ground_truth.get('calculated_scores', {}) if ground_truth else {}
     # We don't have score details in ground_truth dict usually (it's separate in main), 
     # but we can pass them or just default them.
@@ -1618,8 +1619,9 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
     # Actually, Rates Panel and Algo Box are large. Maybe put them below the Key Numbers but above the dropdown?
     # Yes.
     
-    # Render Rates Panel
+    # Render Visual Panels
     rates_html = render_rates_curve_panel(rates_curve)
+    equity_flows_html = render_equity_flows_panel(equity_flows)
     
     # Render Algo Box (Ground Truth)
     algo_html = render_algo_box(scores, score_details, cme_signals)
@@ -1738,6 +1740,7 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
         
         {header_html}
         {rates_html}
+        {equity_flows_html}
         {algo_html}
         
         <div class="controls">
@@ -1762,7 +1765,7 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
         f.write(html)
     print(f"HTML report generated and saved to summaries/{filename}")
 
-def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None, rates_curve=None):
+def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None, rates_curve=None, equity_flows=None):
     print("Generating HTML report...")
     
     # Prepend Verification Block to the raw text BEFORE markdown conversion
@@ -1781,15 +1784,9 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     kn_html = render_key_numbers(extracted_metrics)
     signals_panel_html = render_signals_panel(cme_signals)
     rates_curve_html = render_rates_curve_panel(rates_curve)
-    
-    # Algo Box (Technical Audit) construction
-    # Note: daily report adds "Technical Audit" heading manually in HTML template, 
-    # but render_algo_box includes it. 
-    # We need to adjust the HTML template below to avoid double heading.
-    # Actually, render_algo_box returns the full <div class="algo-box">...</div>
-    # In the original generate_html, the algo box code was generated into `score_html` and `sig_html`.
-    # Let's use the helper.
+    equity_flows_html = render_equity_flows_panel(equity_flows)
     algo_box_html = render_algo_box(scores, details, cme_signals)
+    event_callout_html = render_event_callout(event_context, rates_curve)
 
     # Build columns conditionally
     columns_html = ""
@@ -1799,6 +1796,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
                 <h2>&#129302; Gemini ({GEMINI_MODEL})</h2>
                 {signals_panel_html}
                 {rates_curve_html}
+                {equity_flows_html}
                 {html_gemini}
             </div>
         """
@@ -1809,6 +1807,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
                 <h2>&#129504; OpenRouter ({OPENROUTER_MODEL})</h2>
                 {signals_panel_html}
                 {rates_curve_html}
+                {equity_flows_html}
                 {html_or}
             </div>
         """
