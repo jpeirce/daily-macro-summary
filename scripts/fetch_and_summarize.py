@@ -1613,6 +1613,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
     html_gemini = markdown.markdown(summary_gemini, extensions=['tables'])
     
     # Render Components using Helpers
+    provenance_html = render_provenance_strip(extracted_metrics, cme_signals)
     kn_html = render_key_numbers(extracted_metrics)
     signals_panel_html = render_signals_panel(cme_signals)
     rates_curve_html = render_rates_curve_panel(rates_curve)
@@ -1916,22 +1917,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             <span class="badge badge-blue">Data as of: WT: {display_wt_date} / CME: {display_cme_date}</span>
         </div>
         
-        <div class="provenance-strip">
-            <div class="provenance-item">
-                <span class="provenance-label">Equities:</span>
-                {make_chip('Pos', eq_sig_label, "Positioning Signal: Based on Futures vs Options dominance")}
-                {make_chip('Part', eq_part_label, "Participation: Are participants adding (Expanding) or removing (Contracting) money?")}
-                {make_chip('Dir', eq_dir_str, "Directional Conviction: Is the system allowed to interpret price direction?")}
-                {make_chip('Trend', spx_trend_status, "Price Trend: 1-month price action (Source: yfinance)")}
-            </div>
-            <div class="provenance-item" style="border-left: 1px solid #e1e4e8; padding-left: 15px;">
-                <span class="provenance-label">Rates:</span>
-                {make_chip('Pos', rt_sig_label, "Positioning Signal: Based on Futures vs Options dominance")}
-                {make_chip('Part', rt_part_label, "Participation: Are participants adding (Expanding) or removing (Contracting) money?")}
-                {make_chip('Dir', rt_dir_str, "Directional Conviction: Is the system allowed to interpret price direction?")}
-                {make_chip('10Y', ust10y_move_str, "Yield Move: Basis point change in the 10-Year Treasury yield today")}
-            </div>
-        </div>
+        {provenance_html}
 
         <div style="text-align: center; margin-bottom: 15px; color: #7f8c8d; font-size: 0.9em; font-style: italic;">
             Independently generated summary. Informational use only&mdash;NOT financial advice. Full disclaimers in footer.
@@ -1964,27 +1950,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
             </div>
         </div>
 
-        <div class="algo-box">
-            <h3>&#129518; Technical Audit: Ground Truth Calculation</h3>
-            {score_html}
-            {sig_html}
-            <small><em>These scores are calculated purely from extracted data points using fixed algorithms, serving as a benchmark for the AI models below.</em></small>
-            
-            <details style="margin-top: 15px; cursor: pointer;">
-                <summary style="font-weight: bold; color: #3498db;">Show Calculation Formulas</summary>
-                <div style="margin-top: 10px; font-size: 0.9em; background: #fff; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    <ul style="list-style-type: disc; padding-left: 20px;">
-                        <li><strong>Liquidity Conditions:</strong> 5.0 + (log2(4.5 / HY_Spread) * 3.0) - max(0, (Real_Yield_10Y - 1.5) * 2.0)</li>
-                        <li><strong>Valuation Risk:</strong> 5.0 + ((Forward_PE - 18.0) * 0.66)</li>
-                        <li><strong>Inflation Pressure:</strong> 5.0 + ((Inflation_Expectations_5y5y - 2.25) * 10.0)</li>
-                        <li><strong>Credit Stress:</strong> 2.0 + ((HY_Spread - 3.0) * 1.6) [Min 2.0]</li>
-                        <li><strong>Growth Impulse:</strong> 5.0 + ((Yield_10Y - Yield_2Y - 0.50) * 3.5)</li>
-                        <li><strong>Risk Appetite:</strong> 10.0 - ((VIX - 10.0) * 0.5)</li>
-                    </ul>
-                    <p style="margin-top: 5px; font-style: italic;">All scores are clamped between 0.0 and 10.0.</p>
-                </div>
-            </details>
-        </div>
+        {algo_box_html}
 
         {glossary_html}
 
