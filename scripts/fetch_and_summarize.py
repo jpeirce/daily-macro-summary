@@ -31,6 +31,18 @@ PDF_SOURCES = {
 }
 OPENROUTER_MODEL = "openai/gpt-5.2" 
 GEMINI_MODEL = "gemini-3-pro-preview" 
+RUN_MODE = os.getenv("RUN_MODE", "PRODUCTION") # Options: PRODUCTION, BENCHMARK
+
+# Benchmark Models (for RUN_MODE="BENCHMARK")
+BENCHMARK_MODELS = [
+    "anthropic/claude-sonnet-4.5",
+    "anthropic/claude-opus-4.5",
+    "openai/gpt-5.2",
+    "x-ai/grok-4.1-fast",
+    "qwen/qwen3-vl-30b-a3b-thinking",
+    "meta-llama/llama-4-scout",
+    "nvidia/nemotron-nano-12b-v2-vl"
+] 
 
 # Noise thresholds by asset class
 NOISE_THRESHOLDS = {
@@ -138,6 +150,52 @@ JSON OUTPUT SCHEMA:
     "data_quality_notes": [string]
   }
 }
+"""
+
+BENCHMARK_SYSTEM_PROMPT = """
+Role: You are a macro strategist for a top-tier hedge fund.
+Task: Analyze the provided visual inputs (WisdomTree Dashboard & CME Bulletin) to produce a strategic, easy-to-digest market outlook.
+
+Format Constraints:
+Length: Total output must be 700–1,000 words.
+Tables: The "Dashboard Scoreboard" is the only table allowed.
+Formatting: Use '###' for all section headers.
+
+Output Structure:
+
+### 1. The Dashboard (Scoreboard)
+
+Create a table with these 6 Dials. CALCULATE THE SCORES YOURSELF (0-10) based on the visual data.
+
+| Dial | Score (0-10) | Justification (Data Source: WisdomTree & CME) |
+|---|---|---|
+| Growth Impulse | [Score] | [Brief justification] |
+| Inflation Pressure | [Score] | [Brief justification] |
+| Liquidity Conditions | [Score] | [Brief justification] |
+| Credit Stress | [Score] | [Brief justification] |
+| Valuation Risk | [Score] | [Brief justification] |
+| Risk Appetite | [Score] | [Brief justification] |
+
+### 2. Executive Takeaway (5–7 sentences)
+[Regime Name, The Driver, The Pivot]
+
+### 3. The "Fiscal Dominance" Check (Monetary Stress)
+[Data, Implication]
+
+### 4. Rates & Curve Profile
+[Shape, Implication]
+
+### 5. The "Canary in the Coal Mine" (Credit Stress)
+[Data, Implication]
+
+### 6. The "Engine Room" (Market Breadth)
+[Data, Implication]
+
+### 7. Valuation & "Smart Money"
+[Data, International, Implication]
+
+### 8. Conclusion & Trade Tilt
+[Cross-Asset Confirmation, Risk Rating, The Trade, Triggers]
 """
 
 SUMMARY_SYSTEM_PROMPT = """
@@ -762,8 +820,9 @@ def extract_metrics_gemini(pdf_paths, prompt_override=None):
 
 # --- Summarization ---
 
-def summarize_openrouter(pdf_paths, ground_truth, event_context):
-    print(f"Summarizing with OpenRouter ({OPENROUTER_MODEL})...")
+def summarize_openrouter(pdf_paths, ground_truth, event_context, model_override=None):
+    target_model = model_override if model_override else OPENROUTER_MODEL
+    print(f"Summarizing with OpenRouter ({target_model})...")
     if not OPENROUTER_API_KEY: return "Error: Key missing"
     
     # Process images for ALL PDFs
@@ -782,10 +841,13 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context):
         cme_images = pdf_to_images(pdf_paths["cme_vol"])
         images.extend(cme_images[:1]) # Just the first page
     
-    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
-        ground_truth_json=json.dumps(ground_truth, indent=2),
-        event_context_json=json.dumps(event_context, indent=2)
-    )
+    if RUN_MODE == "BENCHMARK":
+        formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+    else:
+        formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
+            ground_truth_json=json.dumps(ground_truth, indent=2),
+            event_context_json=json.dumps(event_context, indent=2)
+        )
     
     content_list = [{"type": "text", "text": formatted_prompt}]
     for img_b64 in images:
@@ -801,7 +863,7 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context):
         "Content-Type": "application/json"
     }
     body = {
-        "model": OPENROUTER_MODEL,
+        "model": target_model,
         "messages": [{"role": "user", "content": content_list}]
     }
     
@@ -820,10 +882,13 @@ def summarize_gemini(pdf_paths, ground_truth, event_context):
     genai.configure(api_key=AI_STUDIO_API_KEY)
     model = genai.GenerativeModel(GEMINI_MODEL)
     
-    formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
-        ground_truth_json=json.dumps(ground_truth, indent=2),
-        event_context_json=json.dumps(event_context, indent=2)
-    )
+    if RUN_MODE == "BENCHMARK":
+        formatted_prompt = BENCHMARK_SYSTEM_PROMPT
+    else:
+        formatted_prompt = SUMMARY_SYSTEM_PROMPT.format(
+            ground_truth_json=json.dumps(ground_truth, indent=2),
+            event_context_json=json.dumps(event_context, indent=2)
+        )
     
     content = [formatted_prompt]
     try:
@@ -1023,6 +1088,89 @@ def get_score_color(category, score):
         if score <= 4: return "#e74c3c" # Red (Weak)
         
     return "#2c3e50" 
+
+def generate_benchmark_html(today, summaries):
+    print("Generating Benchmark HTML report...")
+    
+    options = ""
+    divs = ""
+    
+    # Sort models: Gemini Native first, then others
+    sorted_models = [GEMINI_MODEL] + [m for m in summaries.keys() if m != GEMINI_MODEL]
+    
+    for i, model in enumerate(sorted_models):
+        content = summaries.get(model, "No content")
+        html_content = markdown.markdown(content, extensions=['tables'])
+        
+        display_style = "block" if i == 0 else "none"
+        is_selected = "selected" if i == 0 else ""
+        
+        options += f'<option value="{model}" {is_selected}>{model}</option>'
+        divs += f'<div id="{model}" class="model-content" style="display: {display_style};">{html_content}</div>'
+
+    css = """
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; background: #f4f6f8; }
+    h1 { text-align: center; color: #2c3e50; }
+    .controls { text-align: center; margin-bottom: 30px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    select { padding: 8px; font-size: 1em; border-radius: 4px; border: 1px solid #ccc; width: 300px; }
+    .model-content { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); animation: fadeIn 0.3s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    h3 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; }
+    """
+    
+    script = """
+    function showModel(modelId) {
+        // Hide all
+        const contents = document.getElementsByClassName('model-content');
+        for (let i = 0; i < contents.length; i++) {
+            contents[i].style.display = 'none';
+        }
+        // Show selected
+        document.getElementById(modelId).style.display = 'block';
+    }
+    """
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Benchmark Arena: Daily Macro Summary - {today}</title>
+        <style>{css}</style>
+        <script>{script}</script>
+    </head>
+    <body>
+        <h1>Benchmark Arena: Daily Macro Summary ({today})</h1>
+        
+        <div class="controls">
+            <label for="model-select"><strong>Select Model:</strong></label>
+            <select id="model-select" onchange="showModel(this.value)">
+                {options}
+            </select>
+        </div>
+        
+        {divs}
+        
+        <div style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
+            Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | <a href="https://github.com/jpeirce/daily-macro-summary" style="color: #666;">View Source</a>
+        </div>
+    </body>
+    </html>
+    """
+    
+    with open("summaries/index.html", "w", encoding="utf-8") as f:
+        f.write(html)
+        
+    # Archive Copy
+    os.makedirs("archive", exist_ok=True)
+    archive_path = f"archive/benchmark_{today}.html"
+    with open(archive_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"HTML report generated and archived to {archive_path}")
 
 def generate_html(today, summary_or, summary_gemini, scores, details, extracted_metrics, cme_signals=None, verification_block="", event_context=None, rates_curve=None):
     print("Generating HTML report...")
@@ -1711,30 +1859,53 @@ def main():
     verification_block = generate_verification_block(effective_date, extracted_metrics, ground_truth_context['cme_signals'], event_context)
 
     # Phase 2: Summarization
-    summary_or = "OpenRouter summary skipped."
-    summary_gemini = "Gemini summary skipped."
+    
+    if RUN_MODE == "BENCHMARK":
+        print("--- RUNNING BENCHMARK MODE ---")
+        summaries = {}
+        
+        # 1. Run Gemini Native
+        try:
+            summaries[GEMINI_MODEL] = summarize_gemini(pdf_paths, ground_truth_context, event_context)
+        except Exception as e:
+            summaries[GEMINI_MODEL] = f"Failed: {e}"
 
-    if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
-        summary_or = summarize_openrouter(pdf_paths, ground_truth_context, event_context)
-    if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
-        summary_gemini = summarize_gemini(pdf_paths, ground_truth_context, event_context)
-    
-    # Save & Report
-    os.makedirs("summaries", exist_ok=True)
-    generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context, cme_rates_curve)
-    
-    # Email
-    repo_name = GITHUB_REPOSITORY.split("/")[-1]
-    owner_name = GITHUB_REPOSITORY.split("/")[0]
-    pages_url = f"https://{owner_name}.github.io/{repo_name}/"
-    
-    full_audit_data = {
-        "ground_truth": ground_truth_context,
-        "event_context": event_context
-    }
-    
-    email_body = f"Check the attached report for today's summary.\n\nAudit Data: {json.dumps(full_audit_data, indent=2)}"
-    send_email(f"Daily Macro Summary - {today}", email_body, pages_url)
+        # 2. Run OpenRouter Benchmark Models
+        for model in BENCHMARK_MODELS:
+            print(f"Running {model}...")
+            # We re-use summarize_openrouter but override the model
+            summaries[model] = summarize_openrouter(pdf_paths, ground_truth_context, event_context, model_override=model)
+            
+        # Save Report
+        os.makedirs("summaries", exist_ok=True)
+        generate_benchmark_html(today, summaries)
+        
+    else:
+        # PRODUCTION MODE
+        summary_or = "OpenRouter summary skipped."
+        summary_gemini = "Gemini summary skipped."
+
+        if SUMMARIZE_PROVIDER in ["ALL", "OPENROUTER"]:
+            summary_or = summarize_openrouter(pdf_paths, ground_truth_context, event_context)
+        if SUMMARIZE_PROVIDER in ["ALL", "GEMINI"]:
+            summary_gemini = summarize_gemini(pdf_paths, ground_truth_context, event_context)
+        
+        # Save & Report
+        os.makedirs("summaries", exist_ok=True)
+        generate_html(today, summary_or, summary_gemini, algo_scores, score_details, extracted_metrics, ground_truth_context.get('cme_signals'), verification_block, event_context, cme_rates_curve)
+        
+        # Email (Production Only)
+        repo_name = GITHUB_REPOSITORY.split("/")[-1]
+        owner_name = GITHUB_REPOSITORY.split("/")[0]
+        pages_url = f"https://{owner_name}.github.io/{repo_name}/"
+        
+        full_audit_data = {
+            "ground_truth": ground_truth_context,
+            "event_context": event_context
+        }
+        
+        email_body = f"Check the attached report for today's summary.\n\nAudit Data: {json.dumps(full_audit_data, indent=2)}"
+        send_email(f"Daily Macro Summary - {today}", email_body, pages_url)
 
 if __name__ == "__main__":
     main()
