@@ -225,7 +225,11 @@ Role: You are a macro strategist for a top-tier hedge fund.
 Task: Analyze the provided Ground Truth Data (JSON) to produce a strategic, easy-to-digest market outlook.
 
 Inputs Provided:
-1. **Ground Truth Metrics:** Extracted numerical data from WisdomTree & CME.
+1. **Ground Truth Metrics:** Extracted numerical data from:
+   - WisdomTree Daily Dashboard
+   - CME Section 01 (Volume & OI Totals)
+   - CME Section 09 (Treasury Rates Curve)
+   - CME Section 11 (Equity Index Flows)
 2. **Event Context:** Active market events (e.g., OPEX).
 
 Format Constraints:
@@ -335,8 +339,11 @@ GLOBAL CONSTRAINTS (Language & Tone):
    * *Good:* "Options-led activity, typically associated with volatility or hedging demand, remains the primary driver."
 
 INPUTS PROVIDED (Vision):
-1. WisdomTree Daily Snapshot (Images): Charts, Spreads, and Yield Curve data.
-2. CME Daily Bulletin (Images): Dense tables showing Volume and Open Interest (Commitment).
+1. **WisdomTree Daily Snapshot (Images):** Charts, Spreads, and Yield Curve data.
+2. **CME Daily Bulletin (Images):**
+   - **Section 01:** Exchange-wide Volume and Open Interest totals.
+   - **Section 09:** Interest Rate Futures (Yield Curve positioning).
+   - **Section 11:** Equity Index Futures (S&P, Nasdaq, Dow flows).
 
 CRITICAL: You have been provided with PRE-CALCULATED Ground Truth Scores, raw Extracted Metrics, and deterministic Signal Labels below.
 You MUST use these exact scores and signals. Do NOT attempt to recalculate them.
