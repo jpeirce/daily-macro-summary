@@ -1446,7 +1446,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
         
         <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 20px;">
             <span class="badge badge-gray">Generated: {datetime.now().strftime('%Y-%m-%d %H:%M UTC')}</span>
-            <span class="badge badge-blue">Data as of: {display_wt_date} / {display_cme_date}</span>
+            <span class="badge badge-blue">Data as of: WT: {display_wt_date} / CME: {display_cme_date}</span>
         </div>
         
         <div class="provenance-strip" style="flex-wrap: wrap;">
