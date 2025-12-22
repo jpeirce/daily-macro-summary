@@ -15,8 +15,9 @@ The system uses a **Three-Pass Intelligence Architecture** to ensure accuracy an
 
 ## 🚀 Features
 
-*   **Multi-Source Synthesis:** Combines the WisdomTree Daily Dashboard, CME Daily Bulletin (Section 01 & 09), and Yahoo Finance live data.
+*   **Multi-Source Synthesis:** Combines the WisdomTree Daily Dashboard, CME Daily Bulletin (Sections 01, 09, 11), and Yahoo Finance live data.
 *   **Rates Curve Intelligence:** Automatically identifies the "Active Tenor" and dominant activity cluster (Short End, Belly, Tens, Long End) across the Treasury futures curve.
+*   **Equity Flow Analysis:** Extracts and visualizes Volume & Open Interest changes for major indices (S&P 500, Nasdaq, Dow, Midcap, Smallcap) from CME Section 11.
 *   **Deterministic Signal Gates:** Python-based logic enforces signal labels (Directional, Hedging-Vol, Noise) based on mathematical thresholds (`max(abs(futures), abs(options))`), preventing LLM hallucinations.
 *   **Metric Integrity (Whitelist):** Enforces strict "Metric Boundaries"—the LLM is prohibited from misassigning drivers (e.g., citing HY Spreads to justify Growth scores). Post-processing replaces out-of-scope justifications with a revision notice.
 *   **Event-Aware Intelligence:** Automatically detects expiry cycles (OPEX/Witching) and downgrades directional conviction when volume/OI signals may be distorted.
