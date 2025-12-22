@@ -1185,6 +1185,17 @@ def generate_benchmark_html(today, summaries, filename="benchmark.html"):
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
     h3 { border-bottom: 2px solid #eee; padding-bottom: 8px; margin-top: 30px; }
+    
+    /* Native Dark Mode */
+    @media (prefers-color-scheme: dark) {
+        body { background: #0d1117; color: #c9d1d9; }
+        .controls, .model-content { background: #161b22; border-color: #30363d; box-shadow: none; color: #c9d1d9; }
+        h1, h2, h3, strong { color: #c9d1d9 !important; }
+        select { background: #0d1117; color: #c9d1d9; border-color: #30363d; }
+        th { background-color: #21262d; color: #c9d1d9; border-color: #30363d; }
+        td { color: #c9d1d9; border-color: #30363d; }
+        a { color: #58a6ff; }
+    }
     """
     
     script = """
