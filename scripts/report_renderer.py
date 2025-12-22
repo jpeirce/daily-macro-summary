@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import markdown
 from datetime import datetime
 from config import PDF_SOURCES, GEMINI_MODEL, OPENROUTER_MODEL
@@ -321,6 +322,51 @@ def render_algo_box(scores, details, cme_signals):
     </div>
     """
 
+def inject_score_deltas(html_content, ground_truth_scores):
+    if not ground_truth_scores: return html_content
+    
+    # Dial keys must match extracted metrics keys
+    dials = [
+        "Growth Impulse", "Inflation Pressure", "Liquidity Conditions", 
+        "Credit Stress", "Valuation Risk", "Risk Appetite"
+    ]
+    
+    # Regex to capture the Dial Name cell and the Score cell
+    # Markdown tables render as <tr><td>Dial</td><td>Score</td>...</tr>
+    # We use a pattern that matches the first two columns.
+    pattern = r"(<td>\s*(" + "|".join(dials) + r")\s*</td>\s*<td>\s*)([^<]+)(\s*</td>)"
+    
+    def replacer(match):
+        prefix = match.group(1)
+        dial_name = match.group(2)
+        score_text = match.group(3)
+        suffix = match.group(4)
+        
+        try:
+            # Extract first float
+            nums = re.findall(r"[\d\.]+", score_text)
+            if not nums: return match.group(0)
+            
+            llm_score = float(nums[0])
+            gt_score = ground_truth_scores.get(dial_name)
+            
+            if gt_score is not None:
+                delta = llm_score - gt_score
+                # Color logic: Red if diff > 2, Orange if > 1, Gray otherwise
+                color = "gray"
+                if abs(delta) >= 2.0: color = "red"
+                elif abs(delta) >= 1.0: color = "orange"
+                
+                # Badge styling matching the rest of the report
+                badge = f' <span class="badge badge-{color}" style="font-size:0.7em; vertical-align: middle;" title="Diff from Ground Truth ({gt_score})">{delta:+.1f}</span>'
+                return f"{prefix}{score_text}{badge}{suffix}"
+        except Exception:
+            pass
+            
+        return match.group(0)
+
+    return re.sub(pattern, replacer, html_content, flags=re.IGNORECASE)
+
 def generate_benchmark_html(today, summaries, ground_truth=None, event_context=None, filename="benchmark.html"):
     print(f"Generating Benchmark HTML report ({filename})...")
     
@@ -376,6 +422,9 @@ def generate_benchmark_html(today, summaries, ground_truth=None, event_context=N
     for i, model in enumerate(sorted_models):
         content = summaries.get(model, "No content")
         html_content = markdown.markdown(content, extensions=['tables'])
+        
+        # Inject Score Deltas (LLM vs Ground Truth)
+        html_content = inject_score_deltas(html_content, scores)
         
         display_style = "block" if i == 0 else "none"
         is_selected = "selected" if i == 0 else ""
