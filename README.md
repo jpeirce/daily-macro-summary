@@ -11,17 +11,21 @@ The system uses a **Three-Pass Intelligence Architecture** to ensure accuracy an
     *   **Live Analysis:** Fetches real-time S&P 500 trend and 10-Year Treasury Yield (`^TNX`) basis point changes to ensure narrative precision.
     *   **Event Calendar:** Detects Monthly OPEX, Triple Witching, and Month-End rebalancing via a deterministic rules engine.
 3.  **Summarization (Pass 3 - Logic Gates):** Feeds extracted data, Ground Truth scores, and the Event Context to an LLM. Strict **Invariant Gates** mandate specific phrasing, while a post-processing **Redaction Scrubber** ensures no directional leakage occurs in sections where the signal is mathematically weak.
+4.  **Verification & Validation (Pass 4 - Audit):** A final validator scans the generated narrative to ensure each score's justification stays within its "Metric Whitelist" (e.g., Growth cannot cite Credit spreads) and that no euphemistic directional "leakage" bypassed Pass 3.
 
 ## 🚀 Features
 
-*   **Multi-Source Synthesis:** Combines the WisdomTree Daily Dashboard, CME Daily Bulletin (Section 01), and Yahoo Finance live data.
+*   **Multi-Source Synthesis:** Combines the WisdomTree Daily Dashboard, CME Daily Bulletin (Section 01 & 09), and Yahoo Finance live data.
+*   **Rates Curve Intelligence:** Automatically identifies the "Active Tenor" and dominant activity cluster (Short End, Belly, Tens, Long End) across the Treasury futures curve.
 *   **Deterministic Signal Gates:** Python-based logic enforces signal labels (Directional, Hedging-Vol, Noise) based on mathematical thresholds (`max(abs(futures), abs(options))`), preventing LLM hallucinations.
+*   **Metric Integrity (Whitelist):** Enforces strict "Metric Boundaries"—the LLM is prohibited from misassigning drivers (e.g., citing HY Spreads to justify Growth scores). Post-processing replaces out-of-scope justifications with a revision notice.
 *   **Event-Aware Intelligence:** Automatically detects expiry cycles (OPEX/Witching) and downgrades directional conviction when volume/OI signals may be distorted.
 *   **Guaranteed Narrative Safety:** 
     *   **Global Constraints:** Explicitly bans "Actor Attribution" (Smart Money, Whales, Institutions, Allocators).
-    *   **Post-Generation Redaction:** A surgical regex scrubber redacts directional language from specific asset sections when the deterministic signal is weak.
+    *   **Euphemism Scrubber:** Surgical regex scrubber redacts both direct directional terms and subtle "leakage" (upside bias, risk-on skew, tilted bullish) from non-directional sections.
 *   **Interactive HTML Dashboard:**
     *   **Sticky Status Bar:** Real-time chips for Signal, Direction, Trend, and Participation pinned to the top of the viewport.
+    *   **Rates Curve Visual:** Heatmapped table and grid showing OI changes across the front, belly, and long end of the curve.
     *   **Audit Trail:** Collapsible "Data Verification" block with CME row anchors, raw signed deltas, and gate logic tooltips.
     *   **Navigation:** Left-side mini Table of Contents for quick section jumping.
 *   **Daily Email:** Delivers the briefing to your inbox every morning.
