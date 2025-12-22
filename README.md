@@ -41,16 +41,24 @@ Required for the GitHub Actions pipeline:
 *   `RECIPIENT_EMAIL`: Target email address.
 
 ### Configuration
-Controlled via `.github/workflows/summary.yml`:
+Controlled via environment variables or workflow files:
+*   `RUN_MODE`: Set to `PRODUCTION` (Strict Gates) or `BENCHMARK` (Raw Model Reasoning).
 *   `SUMMARIZE_PROVIDER`: Set to `GEMINI` (default), `OPENROUTER`, or `ALL` (enables side-by-side comparison in the HTML report).
 *   `GEMINI_MODEL`: Set to `gemini-3-pro-preview`.
 
-## 📊 Benchmark Arena
-The `benchmark` branch allows testing the summary logic against 8+ different models (Claude, GPT-4o, etc.) without Ground Truth constraints to measure raw reasoning performance.
+## 🤖 GitHub Actions
 
-```bash
-gh workflow run summary.yml --ref benchmark
-```
+The system is automated via GitHub Actions workflows:
+
+### 1. Daily WisdomTree Summary (`summary.yml`)
+*   **Schedule:** Runs automatically at **17:00 UTC (10:00 AM MST)** on market days (Mon-Fri).
+*   **Manual Trigger:** Go to **Actions** -> **Daily WisdomTree Summary** -> **Run workflow**.
+*   **Output:** Updates the `index.html` report on GitHub Pages.
+
+### 2. Benchmark Arena (`benchmark.yml`)
+*   **Trigger:** Manual only. Go to **Actions** -> **Benchmark Arena** -> **Run workflow**.
+*   **Purpose:** Runs the "Score Yourself" logic against a roster of 7+ top-tier models (Claude 4.5, GPT-5.2, Grok, etc.) using all available PDF inputs.
+*   **Output:** Updates the `benchmark.html` report on GitHub Pages.
 
 ## 📈 Live Dashboards
 *   **[Daily Macro Summary](https://jpeirce.github.io/daily-macro-summary/)**
