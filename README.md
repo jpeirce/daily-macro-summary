@@ -55,6 +55,11 @@ The system is automated via GitHub Actions workflows:
 *   **Manual Trigger:** Go to **Actions** -> **Daily Macro Summary** -> **Run workflow**.
 *   **Output:** Updates the `index.html` report on GitHub Pages.
 
+### 2. Benchmark Arena (`benchmark.yml`)
+*   **Trigger:** Manual only. Go to **Actions** -> **Benchmark Arena** -> **Run workflow**.
+*   **Purpose:** Runs the "Score Yourself" logic against a roster of 7+ top-tier models (Claude 4.5, GPT-5.2, Grok, etc.) using all available PDF inputs.
+*   **Output:** Updates the `benchmark.html` report on GitHub Pages.
+
 ### 3. Benchmark Arena (Data Only) (`benchmark_data.yml`)
 *   **Trigger:** Manual only. Go to **Actions** -> **Benchmark Arena (Data Only)** -> **Run workflow**.
 *   **Purpose:** Runs the same "Score Yourself" logic but feeds the models **extracted JSON data** instead of raw PDFs. This isolates reasoning ability from vision/OCR capabilities.
