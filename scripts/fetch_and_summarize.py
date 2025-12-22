@@ -1449,6 +1449,7 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
                 {columns_html}
             </div>
         </div>
+    """
 
     # Construct Glossary
     glossary_items = [
