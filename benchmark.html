@@ -45,6 +45,9 @@
     /* Event Callout */
     .event-callout { background: #f4f6f8; border: 1px solid #d1d5da; border-radius: 6px; padding: 12px 20px; margin-bottom: 30px; display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: #444; }
     .event-callout strong { color: #24292e; }
+    /* Equity Flows */
+    .equity-row { border-bottom: 1px solid #eee; }
+    .vol-label { color: #555; }
     /* Badges */
     .badge { padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; white-space: nowrap; display: inline-block; }
     .badge-blue { background: #ebf5fb; color: #2980b9; border: 1px solid #aed6f1; }
@@ -71,6 +74,9 @@
         .event-callout { background: #1c2128 !important; border-color: #444c56 !important; color: #c9d1d9 !important; }
         .active-tenor-row { background-color: rgba(56, 139, 253, 0.15) !important; border-left-color: #58a6ff !important; }
         .algo-box details div { background: #161b22 !important; color: #c9d1d9 !important; border-color: #30363d !important; }
+        .badge-warning { background: #3e3725; color: #ffca2c; border-color: #534824; }
+        .equity-row { border-color: #30363d !important; }
+        .vol-label { color: #8b949e !important; }
     }
     </style>
         <script>
@@ -120,11 +126,11 @@
     <div class="event-callout">
         <span style="font-size: 1.5em;">&#9888;&#65039;</span>
         <div>
-            <strong>Event/Data Alert:</strong> MONTHLY_OPEX, TRIPLE_WITCHING, DATA_QUALITY_ALERT<br>
-            <small style="color: #666; font-style: italic;">Expiry/roll can cause mechanical volume/OI changes. Downgrade directional inference. Expiry across index options, single-stock options, and futures; positioning signals may be distorted. PLEASE NOTE, DUE TO A REPORTING ERROR, YESTERDAY’S OPEN INTEREST IN THE USZ7 CONTRACT WAS OVERSTATED BY 103,495. THE ERROR HAS BEEN REMEDIAT TODAY’S REPORTED OPEN INTEREST IS CORRECT. DUE TO THE MINIMUM TICK SIZE INCREASE IN THE 30-YEAR TREASURY BONDS FUTURES, THE CONTRACT HIGHS/LOWS MAY DISPLAY AN INVALID PRICE FORMAT.</small>
+            <strong>Event/Data Alert:</strong> TRIPLE_WITCHING, MONTHLY_OPEX, DATA_QUALITY_ALERT<br>
+            <small style="color: #666; font-style: italic;">Expiry across index options, single-stock options, and futures; positioning signals may be distorted. Expiry/roll can cause mechanical volume/OI changes. Downgrade directional inference. PRELIMINARY PLEASE NOTE, DUE TO A REPORTING ERROR, YESTERDAY’S OPEN INTEREST IN THE USZ7 CONTRACT WAS OVERSTATED BY 103,495. THE ERROR HAS BEEN REMEDIAT TODAY’S REPORTED OPEN INTEREST IS CORRECT. DUE TO THE MINIMUM TICK SIZE INCREASE IN THE 30-YEAR TREASURY BONDS FUTURES, THE CONTRACT HIGHS/LOWS MAY DISPLAY AN INVALID PRICE FORMAT.</small>
         </div>
     </div>
-    <div class='key-numbers'><div class='key-number-item' title='Broad US Equity Market Index' style='cursor: help;'><span class='key-number-label'>S&P 500</span><span class='key-number-value numeric'>6834.50</span></div><div class='key-number-item' title='Valuation: Price / Expected Earnings (next 12m)' style='cursor: help;'><span class='key-number-label'>Forward P/E</span><span class='key-number-value numeric'>22.70x</span></div><div class='key-number-item' title='Credit Risk: Yield difference between Junk Bonds and Treasuries' style='cursor: help;'><span class='key-number-label'>HY Spread</span><span class='key-number-value numeric'>2.84%</span></div><div class='key-number-item' title='US Treasury 10-Year Yield (Risk-free rate proxy)' style='cursor: help;'><span class='key-number-label'>10Y Nominal</span><span class='key-number-value numeric'>4.12%</span></div><div class='key-number-item' title='US Dollar Index (Strength vs Basket)' style='cursor: help;'><span class='key-number-label'>DXY</span><span class='key-number-value numeric'>98.63</span></div><div class='key-number-item' title='Oil Price (Energy Cost Proxy)' style='cursor: help;'><span class='key-number-label'>WTI Crude</span><span class='key-number-value numeric'>$56.92</span></div><div class='key-number-item' title='High Yield Bond ETF (Liquidity Proxy)' style='cursor: help;'><span class='key-number-label'>HYG</span><span class='key-number-value numeric'>$80.36</span></div><div class='key-number-item' title='Market Volatility Index (Fear Gauge)' style='cursor: help;'><span class='key-number-label'>VIX</span><span class='key-number-value numeric'>14.91</span></div><div class='key-number-item' title='Total Volume across CME Exchange' style='cursor: help;'><span class='key-number-label'>CME Vol</span><span class='key-number-value numeric'>19,197,300</span></div></div>
+    <div class='key-numbers'><div class='key-number-item' title='Broad US Equity Market Index' style='cursor: help;'><span class='key-number-label'>S&P 500</span><span class='key-number-value numeric'>6834.50</span></div><div class='key-number-item' title='Valuation: Price / Expected Earnings (next 12m)' style='cursor: help;'><span class='key-number-label'>Forward P/E</span><span class='key-number-value numeric'>22.70x</span></div><div class='key-number-item' title='Credit Risk: Yield difference between Junk Bonds and Treasuries' style='cursor: help;'><span class='key-number-label'>HY Spread</span><span class='key-number-value numeric'>2.84%</span></div><div class='key-number-item' title='US Treasury 10-Year Yield (Risk-free rate proxy)' style='cursor: help;'><span class='key-number-label'>10Y Nominal</span><span class='key-number-value numeric'>4.12%</span></div><div class='key-number-item' title='US Dollar Index (Strength vs Basket)' style='cursor: help;'><span class='key-number-label'>DXY</span><span class='key-number-value numeric'>98.64</span></div><div class='key-number-item' title='Oil Price (Energy Cost Proxy)' style='cursor: help;'><span class='key-number-label'>WTI Crude</span><span class='key-number-value numeric'>$57.01</span></div><div class='key-number-item' title='High Yield Bond ETF (Liquidity Proxy)' style='cursor: help;'><span class='key-number-label'>HYG</span><span class='key-number-value numeric'>$80.36</span></div><div class='key-number-item' title='Market Volatility Index (Fear Gauge)' style='cursor: help;'><span class='key-number-label'>VIX</span><span class='key-number-value numeric'>14.91</span></div><div class='key-number-item' title='Total Volume across CME Exchange' style='cursor: help;'><span class='key-number-label'>CME Vol</span><span class='key-number-value numeric'>19,197,300</span></div></div>
         
     <div class="rates-curve-panel">
         <div class="curve-header">
@@ -216,6 +222,57 @@
     </div>
     
         
+    <div class="rates-curve-panel">
+        <div class="curve-header">
+            <strong>US Equity Index Flows (CME)</strong>
+        </div>
+        
+        <div class="equity-row" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: #2c3e50;">S&P 500</div>
+            <div style="display: flex; gap: 15px;">
+                <span class="vol-label" title="Total Volume">Vol: 1,348,486</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: #e74c3c; min-width: 60px; text-align: right;">-64</span>
+            </div>
+        </div>
+        
+        <div class="equity-row" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: #8e44ad;">NASDAQ</div>
+            <div style="display: flex; gap: 15px;">
+                <span class="vol-label" title="Total Volume">Vol: 504,144</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: #e74c3c; min-width: 60px; text-align: right;">-1285</span>
+            </div>
+        </div>
+        
+        <div class="equity-row" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: #2980b9;">DOW</div>
+            <div style="display: flex; gap: 15px;">
+                <span class="vol-label" title="Total Volume">Vol: 70,806</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: #27ae60; min-width: 60px; text-align: right;">+62</span>
+            </div>
+        </div>
+        
+        <div class="equity-row" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: #7f8c8d;">MID 400</div>
+            <div style="display: flex; gap: 15px;">
+                <span class="vol-label" title="Total Volume">Vol: 12,964</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: #e74c3c; min-width: 60px; text-align: right;">-883</span>
+            </div>
+        </div>
+        
+        <div class="equity-row" style="display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9em;">
+            <div style="font-weight: 600; color: #7f8c8d;">SML 600</div>
+            <div style="display: flex; gap: 15px;">
+                <span class="vol-label" title="Total Volume">Vol: 50</span>
+                <span title="Open Interest Change" style="font-weight: bold; color: #27ae60; min-width: 60px; text-align: right;">+38</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 8px; font-size: 0.8em; color: #999; text-align: right; font-style: italic;">
+            Source: Daily Bulletin Sec. 11
+        </div>
+    </div>
+    
+        
     <div class="algo-box">
         <h3>&#129518; Technical Audit: Ground Truth Calculation</h3>
         <div class='score-grid'>
@@ -229,7 +286,7 @@
         </div>
         <div class='score-card' style='border-left: 5px solid #2c3e50;'>
             <div class='score-label'><span>Inflation Pressure</span><span title='Unknown' style='cursor: help; opacity: 0.5;'>&#9989;</span></div>
-            <div class='score-value' style='color: #2c3e50;'>5.0/10</div>
+            <div class='score-value' style='color: #2c3e50;'>4.7/10</div>
         </div>
         <div class='score-card' style='border-left: 5px solid #27ae60;'>
             <div class='score-label'><span>Credit Stress</span><span title='Unknown' style='cursor: help; opacity: 0.5;'>&#9989;</span></div>
@@ -243,7 +300,7 @@
             <div class='score-label'><span>Risk Appetite</span><span title='Unknown' style='cursor: help; opacity: 0.5;'>&#9989;</span></div>
             <div class='score-value' style='color: #27ae60;'>7.5/10</div>
         </div></div>
-        <div class='score-grid' style='margin-top: 20px; border-top: 2px dashed #eee; padding-top: 20px;'>
+        <div class='score-grid' style='margin-top: 20px; border-top: 2px dashed #eee; padding-top: 20px; border-left: none;'>
             <div style='background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center; border-left: 5px solid #7f8c8d;' title='Options 303.4x Futures [|1781589| >= |5872|]'>
                 <span class='key-number-label'>EQUITY SIGNAL</span><br>
                 <span class='key-number-value' style='color: #7f8c8d;'>Hedging-Vol</span><br>
@@ -279,10 +336,89 @@
             </select>
         </div>
         
-        <div id="gemini-3-pro-preview" class="model-content" style="display: block;"><p><strong>To:</strong> Investment Committee
-<strong>From:</strong> Macro Strategy Desk
-<strong>Date:</strong> December 19, 2025
-<strong>Subject:</strong> Strategic Outlook: Pricing for Perfection in a Steepening Regime</p>
+        <div id="gemini-3-pro-preview" class="model-content" style="display: block;"><h3>1. The Dashboard (Scoreboard)</h3>
+<table>
+<thead>
+<tr>
+<th>Dial</th>
+<th>Score (0-10)</th>
+<th>Justification (Data Source: WisdomTree &amp; CME)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Growth Impulse</td>
+<td>6.0</td>
+<td>US economic data remains resilient but bifurcated. While Large Cap/Tech earnings growth is robust (Mag 7 est. 26% growth), small caps and cyclical sectors are lagging. No recession is imminent, but the engine is running on fewer cylinders.</td>
+</tr>
+<tr>
+<td>Inflation Pressure</td>
+<td>3.0</td>
+<td>The inflation scare is effectively dead. 5Y/5Y Forward Inflation Expectations are anchored at ~2.22% (WisdomTree p.5), and TIPS breakevens are stable. The market is pricing in disinflation, allowing the Fed room to maneuver.</td>
+</tr>
+<tr>
+<td>Liquidity Conditions</td>
+<td>8.0</td>
+<td>Financial conditions are loose. The 2-year Treasury yield has dropped to 3.46% (WisdomTree p.1), signaling the market has priced in aggressive Fed cuts. The Bull Steepening curve is injecting liquidity into risk assets.</td>
+</tr>
+<tr>
+<td>Credit Stress</td>
+<td>2.0</td>
+<td>Virtually non-existent. High Yield credit spreads are tight at 2.84% (WisdomTree p.4), significantly below the historical median of 4.58%. The bond market sees zero probability of a near-term default cycle.</td>
+</tr>
+<tr>
+<td>Valuation Risk</td>
+<td>9.0</td>
+<td>Extreme. S&amp;P 500 Forward P/E is 22.7x vs. historical median of 16.8x. The Equity Risk Premium (ERP) has compressed to a razor-thin 2.44% (WisdomTree p.19), offering little compensation for equity risk over bonds.</td>
+</tr>
+<tr>
+<td>Risk Appetite</td>
+<td>8.5</td>
+<td>Momentum dominates. Despite valuation headwinds, the "Pain Trade" is higher. Tech concentration (Mag 7) remains the primary vehicle for risk expression, ignoring the lack of breadth in the broader market.</td>
+</tr>
+</tbody>
+</table>
+<h3>2. Executive Takeaway</h3>
+<p><strong>Regime: Goldilocks with Vertigo.</strong></p>
+<p>The current market regime is defined by a "Bull Steepener" dynamic where falling front-end yields are fueling a valuation expansion in long-duration assets (Tech/Growth). The primary driver is the market’s conviction that the Federal Reserve has successfully engineered a soft landing, evidenced by collapsing inflation expectations and resilient credit spreads. However, the pivot point for risk lies in the massive divergence between price and valuation; with the S&amp;P 500 trading at nearly 23x earnings and the Equity Risk Premium near multi-decade lows, the market is priced for perfection. We are actively participating in the trend, but with tight stops, as today's Triple Witching OpEx may mask underlying distribution flows.</p>
+<h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
+<p>The narrative of fiscal dominance is currently being suppressed by the market's hunger for duration. Despite heavy Treasury issuance implied by the CME volume data, the yield curve is re-pricing lower, not higher.
+*   <strong>Data:</strong> 10-Year Nominal Yields have dropped 58bps month-to-date to 4.12%, while Real Yields (TIPS) have compressed to ~1.92% (WisdomTree p.1 &amp; p.3).
+*   <strong>Implication:</strong> The market is not demanding a higher term premium for fiscal profligacy yet. Instead, the drop in real yields acts as a direct adrenaline shot to P/E multiples. As long as real yields remain below 2%, the "TINA" (There Is No Alternative) trade forces capital back into equities, regardless of how rich nominal valuations appear.</p>
+<h3>4. Rates &amp; Curve Profile</h3>
+<p>The Treasury curve is undergoing a classic <strong>Bull Steepener</strong>, which is historically the most bullish backdrop for risk assets post-hiking cycle.
+*   <strong>Shape:</strong> The 2s10s spread has widened significantly to +66bps (WisdomTree p.1). The CME Interest Rate Futures complex shows the 2-Year Note (Dec '25) pricing a yield of ~3.46% versus the 10-Year at ~4.12%.
+*   <strong>Implication:</strong> The front end (2Y) is rallying faster than the long end (10Y), signaling that the market believes the Fed is behind the curve and must cut aggressively to align with economic reality. This steepening restores profit margins for banks and leveraged financials, but primarily, it validates the "long duration" equity trade (i.e., Big Tech).</p>
+<h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
+<p>If there is a recession lurking, the credit market hasn't found it. This is the single strongest argument against a bearish tactical stance.
+*   <strong>Data:</strong> High Yield spreads are trading at <strong>2.84%</strong>, near cycle lows and well inside the 20-year median of 4.58% (WisdomTree p.4). Interest coverage ratios for the S&amp;P 500 remain healthy at 8.8x (WisdomTree p.23).
+*   <strong>Implication:</strong> Credit leads equities. Until we see HY spreads widen above 350-400bps, the "growth scare" narrative lacks teeth. The credit market is signaling that corporate balance sheets are robust enough to withstand the current rate environment, even if equity valuations are stretched.</p>
+<h3>6. The "Engine Room" (Market Breadth)</h3>
+<p>The market's engine is powerful but dangerously narrow. We are witnessing a bifurcation between the "Haves" (Mega Cap Tech) and the "Have Nots" (Small Caps/Value).
+*   <strong>Data:</strong> The S&amp;P 500 Growth index trades at a forward P/E of 27.6x, while the S&amp;P 600 Small Cap Value index trades at roughly 15.2x (WisdomTree p.20 &amp; 25). The "Mag 7" aggregate P/E is 29.5x compared to the S&amp;P 500 ex-Mag 7 at 20.2x.
+*   <strong>Implication:</strong> This concentration creates "key man risk" for the index. If yields were to spike, the crowded long trade in the Mag 7 would unwind violently. However, in the near term, this momentum is self-reinforcing. We prefer staying with the trend (Growth) rather than trying to bottom-fish in Small Caps until a clearer economic re-acceleration appears.</p>
+<h3>7. Valuation &amp; "Smart Money"</h3>
+<p>We are currently paying champagne prices for beer growth. The valuation dislocation is extreme, particularly when viewed through the lens of the Equity Risk Premium (ERP).
+*   <strong>Data:</strong> The S&amp;P 500 ERP is at <strong>2.44%</strong>, roughly half its historical median of 5.15% (WisdomTree p.19). Furthermore, U.S. equities are trading at a massive premium (23.4x) relative to EAFE/International markets (15.4x) (WisdomTree p.14).
+*   <strong>International:</strong> Flows into International Quality Dividend Growth (IQDG) or Japan Hedged Equity (DXJ) look attractive as a relative value rotation, given the USD softening.
+*   <strong>Implication:</strong> Today's CME Volume data shows massive activity in Equity Index futures (1.27M contracts in ES), driven by Triple Witching. The decline in Open Interest suggests a mechanical roll rather than fresh bearish positioning. The "Smart Money" is not shorting this rally yet; they are rolling exposure, content to ride the momentum while hedging via options.</p>
+<h3>8. Conclusion &amp; Trade Tilt</h3>
+<p>We remain <strong>Tactically Bullish</strong> but <strong>Structurally Cautious</strong>. The combination of loose financial conditions (falling yields) and tight credit spreads forces us to respect the uptrend. However, with valuations at 22.7x P/E, the risk/reward is poor for passive allocations.</p>
+<ul>
+<li><strong>Risk Rating:</strong> 7/10 (Elevated due to concentration and valuation).</li>
+<li><strong>The Trade:</strong><ol>
+<li><strong>Long Duration Tech:</strong> Continue to hold Quality Growth (Nasdaq-100/XLK) as the primary beneficiary of the Bull Steepener.</li>
+<li><strong>Long 2-Year Treasuries:</strong> Direct play on the Fed cutting cycle.</li>
+<li><strong>Hedge:</strong> Purchase cheap volatility (VIX calls) or Put Spreads on the S&amp;P 500. With the VIX likely suppressed by OpEx flows, protection is inexpensive.</li>
+</ol>
+</li>
+<li><strong>Triggers:</strong><ul>
+<li><em>Bullish:</em> 10Y Yield breaks below 4.00% convincingly.</li>
+<li><em>Bearish:</em> High Yield spreads widen &gt; 350bps or the 10Y yield snaps back above 4.30% (re-inflation scare).</li>
+</ul>
+</li>
+</ul>
+<p><strong>OpEx Note:</strong> Expect erratic price action today due to Triple Witching. Do not chase breakout signals intraday; wait for Monday's settlement to confirm the post-expiry positioning.</p></div><div id="anthropic/claude-sonnet-4.5" class="model-content" style="display: none;"><h1>MACRO MARKET OUTLOOK – December 19, 2025</h1>
 <h3>1. The Dashboard (Scoreboard)</h3>
 <table>
 <thead>
@@ -295,138 +431,77 @@
 <tbody>
 <tr>
 <td>Growth Impulse</td>
-<td><strong>8</strong></td>
-<td>S&amp;P 500 Forward Earnings at $302 (up 12.59% YoY) and YTD Equity returns of +16.45% confirm a robust corporate engine despite macro headwinds.</td>
-</tr>
-<tr>
-<td>Inflation Pressure</td>
-<td><strong>4</strong></td>
-<td>5Y/5Y Forward Inflation Expectation is anchored at ~2.22%. While not dead, inflation is contained enough to allow Fed easing, removing immediate restrictive pressure.</td>
-</tr>
-<tr>
-<td>Liquidity Conditions</td>
-<td><strong>7</strong></td>
-<td>The 2-Year yield (3.46%) trading significantly below the Fed Funds neutral proxy suggests looser financial conditions. High CME Open Interest in rates (72M contracts) implies deep liquidity and active hedging.</td>
-</tr>
-<tr>
-<td>Credit Stress</td>
-<td><strong>2</strong></td>
-<td>High Yield spreads are exceptionally tight (approx. 3.3% vs. 6.1% historical median). Distress is non-existent in current pricing, signaling complacency.</td>
-</tr>
-<tr>
-<td>Valuation Risk</td>
-<td><strong>9</strong></td>
-<td>S&amp;P 500 Forward P/E is 22.7x (vs. 16.8x median). The Equity Risk Premium has compressed to ~2.44%, making equities historically expensive relative to bonds.</td>
-</tr>
-<tr>
-<td>Risk Appetite</td>
-<td><strong>8</strong></td>
-<td>Heavy concentration in Tech (34.1% of S&amp;P) and "Mag 7" outperformance (up ~26%) indicates aggressive risk-seeking behavior, ignoring valuation buffers.</td>
-</tr>
-</tbody>
-</table>
-<h3>2. Executive Takeaway</h3>
-<p><strong>Regime:</strong> The "Reflationary Soft Landing."
-<strong>The Driver:</strong> We are witnessing a classic earnings-driven expansion fueled by a sympathetic Federal Reserve. The market has moved past "fighting the Fed" to "front-running the recovery," evidenced by the S&amp;P 500 delivering ~16% YTD returns alongside earnings growth of 12.5%.
-<strong>The Pivot:</strong> We are at maximum optimism. With Credit Spreads at historic tights and P/E ratios stretching toward 23x, the market is priced for perfection. The pivot risk is no longer recession, but "duration indigestion"—where the sheer supply of Treasury issuance forces long-end yields higher, compressing the P/E multiples that are currently holding the sky up.</p>
-<h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p>The CME Volume data and Treasury spreads highlight a latent fracture in the macro picture. While the front end of the curve has rallied (yields down), the long end remains stubborn. The 10-Year Treasury yield sits at 4.12%, creating a positive 10s/2s spread of +66 bps. This steepening is driven by the "Fiscal Dominance" narrative. The market is comfortable with short-term growth but is demanding a higher term premium for holding long-dated U.S. paper (30Y bonds at 4.80%). This implies that while the Fed eases, the Treasury Department is flooding the zone, capping how low long-term rates (and mortgage rates) can actually fall.</p>
-<h3>4. Rates &amp; Curve Profile</h3>
-<p>The curve has normalized into a <strong>Bull Steepener</strong>.
-*   <strong>The Shape:</strong> The 2-Year Treasury (3.46%) is anchoring the pivot, reflecting cuts priced in for 2026. However, the 10-Year (4.12%) and 30-Year (4.80%) refuse to compress.
-*   <strong>Implication:</strong> This is the most tradable macro signal on the board. The curve tells us the recession trade is dead, but the inflation/supply trade is dormant. We are seeing a rotation from "high rates" to "steep curves." Banks and financials should benefit from this net interest margin expansion, yet they remain underweighted in broad indices relative to Tech.</p>
-<h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p>Credit markets are flashing a warning signal through silence. WisdomTree data shows U.S. High Yield spreads are trading near 330 bps—significantly below the historical median and dangerously close to the post-GFC tight of ~300 bps.
-*   <strong>Data:</strong> Option-Adjusted Spreads (OAS) are priced as if defaults will remain at zero indefinitely.
-*   <strong>Implication:</strong> There is zero convexity in being long credit here. The upside (yield clip) is minimal compared to the asymmetric downside if the growth engine sputters. We are essentially picking up pennies in front of a steamroller. If the 10-Year yield spikes back toward 4.5% due to a supply tantrum, these tight credit spreads will blow out violently.</p>
-<h3>6. The "Engine Room" (Market Breadth)</h3>
-<p>Market breadth remains the primary structural weakness.
-*   <strong>Data:</strong> The "Magnificent 7" trade still commands a massive premium, with the S&amp;P 500 Market Cap weighted index crushing the Equal Weight index. Technology constitutes 34.1% of the S&amp;P 500, with a Forward P/E of 39.5x.
-*   <strong>Implication:</strong> This is a single-point-of-failure market. The S&amp;P 500 Ex-Tech weight is effectively a "Value" index trading at much more reasonable multiples. The divergence between the "haves" (Tech/Growth) and "have-nots" (Small Caps/Value) is extreme. A reversion to the mean doesn't require a crash; it just requires Tech earnings to decelerate slightly, prompting a rotation into the S&amp;P 400/600 or International equities.</p>
-<h3>7. Valuation &amp; "Smart Money"</h3>
-<p>The "Smart Money" flow is visible in the divergence between U.S. and International valuations.
-*   <strong>Data:</strong> The U.S. trades at 23.4x forward earnings. The Ex-US index trades at 15.4x—a roughly 34% discount. Furthermore, the WisdomTree data highlights that Developed Market FX (EUR, JPY) has strengthened slightly against the dollar YTD, adding a currency tailwind to international exposure.
-*   <strong>Implication:</strong> The Equity Risk Premium in the U.S. is 2.44%, offering almost no buffer over bonds. The risk/reward favors moving out of the crowded U.S. large-cap trade and into EAFE markets where valuations (13-15x) provide a safety margin against rate volatility.</p>
-<h3>8. Conclusion &amp; Trade Tilt</h3>
-<p>We are currently surfing a "Goldilocks" wave, but the water is getting shallow. The combination of 23x P/E multiples and ultra-tight credit spreads leaves no room for error. The primary risk is not economic collapse, but a valuation reset driven by sticky long-end rates.</p>
-<p><strong>Risk Rating:</strong> High (due to Valuation/Concentration)
-<strong>The Trade:</strong>
-1.  <strong>Macro:</strong> <strong>Long the Steepener (2s10s).</strong> Receive 2Y / Pay 10Y. We profit as the Fed cuts front-end rates while the long end stays elevated due to fiscal supply.
-2.  <strong>Equity:</strong> <strong>Pair Trade.</strong> Long S&amp;P 600 Small Cap Value (P/E 15.2x) / Short S&amp;P 500 Tech (P/E 39.5x). We are betting on mean reversion in valuations.
-3.  <strong>Hedge:</strong> <strong>Long Puts on HYG.</strong> With credit spreads at historic tights, purchasing protection is cheap. A widening of spreads to merely "average" levels would generate significant alpha.</p>
-<p><strong>Triggers:</strong> Watch the 10-Year yield crossing 4.25% or High Yield spreads widening past 400 bps. Either event signals the end of the "perfection" regime.</p></div><div id="anthropic/claude-sonnet-4.5" class="model-content" style="display: none;"><h1>Market Outlook – December 19, 2025</h1>
-<h3>1. The Dashboard (Scoreboard)</h3>
-<table>
-<thead>
-<tr>
-<th>Dial</th>
-<th>Score (0-10)</th>
-<th>Justification (Data Source: WisdomTree &amp; CME)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Growth Impulse</td>
 <td>6</td>
-<td>YTD equity returns strong (+7.26% Bloomberg Agg, +16.9% S&amp;P 500), but momentum fading month-over-month (-0.18% MTD fixed income). Growth style outperforming value 6-12mo suggests late-cycle dynamics.</td>
+<td>S&amp;P 500 YTD +16.9%, Mag 7 driving breadth (21% YTD), but equal-weight lagging. Modest style rotation signals late-cycle.</td>
 </tr>
 <tr>
 <td>Inflation Pressure</td>
 <td>7</td>
-<td>5y5y forward inflation expectation at 2.22%, above Fed target floor. 10yr breakevens compressed to 2.24%, but TIPS curve steep. Real yields elevated (10yr at 1.92%), indicating persistent inflation concerns.</td>
+<td>5y5y inflation expectation 2.22% (near max), sticky above Fed target; real yields compressed at 1.92% (10yr) suggest persistent inflation.</td>
 </tr>
 <tr>
 <td>Liquidity Conditions</td>
-<td>4</td>
-<td>Treasury curve bear-flattening (2s10s at 67bp, down 122bp from year-ago). Long-end selling pressure evident (-6.41% YTD Long Treasury). CME volume concentrated in short-dated contracts signals defensive positioning.</td>
+<td>5</td>
+<td>Triple witching distorts volume/OI; rates curve steepening (10y-2y +67bp) aids banks, but 10yr nominal at 4.16% drains risk appetite.</td>
 </tr>
 <tr>
 <td>Credit Stress</td>
 <td>3</td>
-<td>HY spreads benign at 2.84% (well below 4.58% median), IG spreads tight. However, municipal stress emerging (3.69% YTD vs 1.59% 2024). Corporate bond negative duration (-0.04) suggests refinancing pressure building.</td>
+<td>HY spreads 2.59% (below median 4.58%), IG at 2.84% (vs. median 5.25%); interest coverage strong (S&amp;P 500 8.8x vs. 6.6x median). Credit benign.</td>
 </tr>
 <tr>
 <td>Valuation Risk</td>
 <td>8</td>
-<td>S&amp;P 500 forward P/E at 22.7x vs 16.8x median (+35% premium). Mag 7 trading 27.8x vs S&amp;P ex-Mag7 at 20.2x. Tech concentration extreme (34% S&amp;P weight). Small-cap discount to large cap at historic wides (0.67x ratio).</td>
+<td>S&amp;P 500 forward P/E 22.6x vs. 16.8x median (+34% premium); Mag 7 at 29.5x vs. rest-of-index 20.2x. Tech 53% of S&amp;P 600 weight = extreme concentration.</td>
 </tr>
 <tr>
 <td>Risk Appetite</td>
-<td>5</td>
-<td>Equity breadth mixed: Growth leading (+20.2% YTD) but small-cap lagging. MSCI EAFE outperforming US YTD (29.9% vs 20.7%), suggesting rotation. Drawdowns shallow (-1.83% S&amp;P 500 from peak). CME options activity elevated but not extreme.</td>
+<td>4</td>
+<td>Equity risk premium 2.44% (median 5.15%); MSCI EAFE -0.58% drawdown, EM -6%; DXY +13.25% YTD signals flight to USD safety post-FOMC.</td>
 </tr>
 </tbody>
 </table>
+<hr />
 <h3>2. Executive Takeaway</h3>
-<p><strong>Regime:</strong> Late-Cycle Valuation Trap. <strong>The Driver:</strong> Persistent inflation expectations (2.22% 5y5y forward) are forcing real yield normalization (1.92% 10yr real), creating a collision between expensive equity multiples (22.7x S&amp;P forward P/E, 35% above trend) and tightening financial conditions. <strong>The Pivot:</strong> The Treasury curve's bear-flattening (2s10s compressed 122bp year-over-year to just 67bp) signals policy uncertainty overwhelming term premium, while international equity outperformance (EAFE +29.9% vs S&amp;P +20.7% YTD) and the extreme small/large-cap valuation gap (0.67x, near record lows) indicate capital is already repositioning away from crowded U.S. mega-cap growth. Credit markets remain complacent (HY spreads at 2.84%), but the municipal sector's 3.69% YTD underperformance flags emerging fiscal stress that could cascade into broader risk assets.</p>
+<p><strong>Regime</strong>: Late-Cycle Rotation with Inflation Persistence.<br />
+<strong>Driver</strong>: Post-FOMC repricing—10yr yield +67bp curve steepening and sticky inflation expectations (5y5y at 2.22%) compress equity risk premium to decade lows (2.44%).<br />
+<strong>Pivot</strong>: Concentration risk acute—Mag 7 (29.5x P/E) trades 35% richer than S&amp;P 500 ex-Tech (19.1x), driving 53% of S&amp;P 600 weight. Triple witching distorts short-term signals; credit markets remain sanguine (HY 2.59%), but valuation extremes and DXY strength (+13.25% YTD) warn of fragility.<br />
+<strong>Implication</strong>: Bullish momentum intact but narrow; defensive positioning prudent ahead of Q1 2026 re-rating risk.</p>
+<hr />
 <h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p><strong>Data:</strong> The Treasury curve exhibits classic fiscal dominance patterns: bear-flattening with the 2s10s spread collapsing from 189bp to 67bp despite the 10-year yield rising 351bp from year-ago levels. The 30-year yield sits at 4.83%, up 273bp, while inflation breakevens remain elevated (2.24% 10yr). Municipal bonds are underperforming (-0.08% MTD, 3.69% YTD vs 1.59% in 2024), and long-duration Treasuries have been decimated (-6.41% YTD). CME futures positioning shows concentrated activity in front-end contracts with muted long-end participation.</p>
-<p><strong>Implication:</strong> Markets are pricing structural fiscal concerns rather than cyclical monetary policy. The simultaneous rise in nominal yields and compression of term premium suggests investors doubt the Fed's ability to normalize policy without triggering fiscal instability. Municipal stress particularly concerning—historically a leading indicator of broader public sector funding crises. The 2.22% 5y5y inflation expectation above target signals markets don't believe the 2% inflation story, forcing real yields to do the heavy lifting (1.92% 10yr real). This creates a dangerous feedback loop: higher real yields stress fiscal sustainability, which perpetuates inflation fears, which demands even higher real yields.</p>
+<p><strong>Data</strong>: 10yr nominal yield 4.16%, TIPS real yield 1.92%, 5y5y inflation breakeven 2.22% (near historical max of 2.67%). Curve steepened sharply post-FOMC: 10y-2y spread +67bp, 10y-3m +52bp.<br />
+<strong>Implication</strong>: Market pricing persistent inflation above Fed's 2% target; steepening suggests growth optimism but also fiscal premium creep. Real rates at 1.92% remain below neutral (~2.5%), signaling Fed unwilling to choke growth despite sticky inflation. Dollar strength (EUR -13.25% YTD) reflects global tightening fatigue—fiscal dominance watch escalates if 10yr breaks 4.50%.</p>
+<hr />
 <h3>4. Rates &amp; Curve Profile</h3>
-<p><strong>Shape:</strong> Bear-steepener morphing into bear-flattener. The curve shows unusual stress: 2yr at 4.25% (+229bp YTD), 10yr at 4.58% (+351bp), 30yr at 4.83% (+273bp). The 2s10s spread at 67bp (down from 189bp) is approaching inversion territory from above—historically rare and signaling profound uncertainty. The 10s30s spread has collapsed to just 25bp. Month-over-month, the entire curve shifted higher with front-end outpacing (3m -566bp change since 12/31/24 reflects expectations reset).</p>
-<p><strong>Implication:</strong> This is not a normal hiking cycle unwind. The curve's behavior—rising across maturities while flattening—suggests markets are caught between incompatible outcomes: inflation persistence requiring higher short rates, but growth/fiscal concerns capping long-end compensation. The 25bp 10s30s spread is particularly ominous, indicating either: (a) severe term premium compression from regulatory/forced buying, or (b) market expectation of policy error forcing eventual cuts. Either way, the lack of compensation for duration risk at current fiscal deficits (~6% GDP) is mispriced. CME positioning data confirms this anxiety—open interest concentrated in tactical front-end trades rather than strategic duration exposure.</p>
+<p><strong>Shape</strong>: Bear steepener—front end anchored (2yr 3.48%), belly sold off (5yr 3.69%), 10yr 4.16%, 30yr 4.83%. 10y-2y +67bp, longest steepening since mid-2024.<br />
+<strong>Implication</strong>: Markets pricing Fed pivot fatigue and fiscal expansion. Ultra-long SOFR futures (30yr TBA) show minimal open interest—dealers cautious. TIPS curve flat (10yr breakeven 2.24%), suggesting inflation structurally elevated. Steepening aids financials (+13.5% YTD) but pressures growth/tech duration. Curve now consistent with soft landing + fiscal largesse, not recession.</p>
+<hr />
 <h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p><strong>Data:</strong> High-yield spreads remain anchored at 2.84% (median 4.58%, crisis peak 21.82%), and investment-grade is similarly tight. Corporate bond total return is positive (+7.83% YTD) despite negative duration positioning (-0.04 modified duration on HY). However, cracks appearing: municipal securities underperforming sharply (3.69% YTD vs. 1.59% prior year, -0.08% MTD), and the corporate bond yield curve shows inversion at short maturities (4.79% yield vs. 6.08% for HY short-term).</p>
-<p><strong>Implication:</strong> The credit market is exhibiting dangerous complacency masking building stress. Muni underperformance is the tell—these instruments are canaries for fiscal and refinancing risk, and their 210bp deterioration YoY signals trouble in public finance. Meanwhile, HY spreads at half their historical median despite: (a) real yields at 1.92% making risk-free alternatives attractive, (b) equity risk premium collapsed to 2.44% (vs. 5.15% median), and (c) interest coverage ratios declining (S&amp;P 500 at 8.8x vs. 6.6x historical median indicates healthy corporates, but dispersion increasing). The negative duration in HY suggests issuers are avoiding long-term financing—a warning they expect refinancing conditions to worsen. When muni stress spreads to corporates, the repricing will be violent given current spread levels offer no cushion.</p>
+<p><strong>Data</strong>: HY spreads 2.59% vs. 4.58% median (15-year); IG 2.84% vs. 5.25% median. S&amp;P 500 interest coverage 8.8x (median 6.6x), cost of debt 3.7% (median 4.6%). Municipal spreads benign.<br />
+<strong>Implication</strong>: Credit markets pricing Goldilocks—no stress despite elevated rates. Coverage ratios robust, but forward risk: if 10yr sustains above 4.5%, refinancing wall in 2026 could compress spreads. Canary silent for now, but narrowing HY/IG differential (75bp) suggests complacency. Watch investment-grade spreads—first to widen if growth disappoints.</p>
+<hr />
 <h3>6. The "Engine Room" (Market Breadth)</h3>
-<p><strong>Data:</strong> Severe market concentration: Information Technology represents 34.1% of S&amp;P 500 weight (40.7% of S&amp;P Growth index), with Mag 7 comprising $40 trillion market cap at 29.5x forward P/E versus S&amp;P ex-Mag 7 at 20.2x. However, breadth deteriorating: small-cap relative valuation at 0.67x large-cap (extreme discount), and style performance diverging sharply—Growth +20.2% YTD but Value only +12.8%. Sector dispersion extreme: Info Tech +21.3% YTD while Energy +6.2%, Consumer Staples +5.0%. International markets outperforming (EAFE +29.9% YTD, ACWI Small +26.2% YTD vs. S&amp;P 500 +16.6%).</p>
-<p><strong>Implication:</strong> This is textbook late-cycle concentration risk. The 34% tech weighting hasn't been this extreme since 2000, and the Mag 7 premium (29.5x vs. 20.2x) is unsustainable—regression to mean would require either: (a) Mag 7 earnings growth of 30%+ annually for three years, or (b) 30% price correction. More telling is international outperformance—when EAFE beats S&amp;P by 930bp YTD, it signals either dollar weakness (confirmed: EUR +13.25% YTD) or global growth rotation. Small-cap discount also historic: at 0.67x large-cap valuation, prior instances (2000, 1973) preceded multi-year small-cap outperformance of 500-1000bp annually. Current breadth suggests institutional money quietly rotating from crowded mega-cap growth into cheaper international/small-cap exposure. When this rotation accelerates, index concentration becomes a liability rather than strength.</p>
+<p><strong>Data</strong>: S&amp;P 500 equal-weight +16.9% vs. cap-weighted +16.9% YTD (convergence), but 6-month divergence widening: growth +15.5% vs. value +12.2%. Mag 7 +23.07% (6M), ex-Mag 7 +9.63%. Small-cap (S&amp;P 600) +7.7% YTD, trailing large by 920bp. Sector: Info Tech 34.1% of S&amp;P 500, Financials 13.5%; Energy/Materials &lt;5% combined.<br />
+<strong>Implication</strong>: Breadth illusory—rally concentrated in 7 stocks (53% of weight). Small-cap underperformance despite curve steepening suggests credit/liquidity constraints. Energy/Materials capitulation (&lt;5% weight) signals deflationary commodity backdrop contradicting inflation data. Rotation stalled; if Mag 7 falters, index vulnerable to air pocket.</p>
+<hr />
 <h3>7. Valuation &amp; "Smart Money"</h3>
-<p><strong>Data:</strong> U.S. equities at 23.4x forward P/E versus 15.4x international (34% premium to historical 17.2x median). International valuation discount to U.S. at -34.2%, near record wides. Sector-level: S&amp;P Info Tech at 39.5x P/E with 26.7% estimated earnings growth versus historical 22.1x median. S&amp;P 500 forward P/E at 22.7x carries +34% premium to 16.8x 10-year median. Equity risk premium collapsed to 2.44% (S&amp;P forward earnings yield minus 10yr Treasury) versus 5.15% median—offering minimal compensation for equity risk at current 10yr yield of 4.58%.</p>
-<p><strong>International:</strong> MSCI EAFE +29.9% YTD in local currency terms (+30.3% USD), Japan Small +27.6% YTD, Europe Small +29.7%. Developed market FX showing strength: EUR +13.25% YTD, CHF +14.14%. Emerging markets mixed but selective strength: Poland +15.6%, Mexico +15.3%. The 422% cumulative U.S. outperformance since 2000 is reversing (-13.24% YTD relative performance).</p>
-<p><strong>Implication:</strong> Capital flow inflection underway. The 34% U.S. valuation premium is historically unprecedented outside 1999-2000, and the 2.44% equity risk premium offers no buffer against the 4.58% risk-free rate—making Treasuries mathematically attractive on a risk-adjusted basis. "Smart money" signals: (a) international outperformance despite dollar strength headwinds suggests fundamental re-rating, (b) small-cap discount in U.S. (0.67x) while international small outperforms indicates sophisticated investors buying overlooked value, (c) currency moves (EUR +13%, JPY +1%) despite U.S. rate advantage suggests capital repatriation/rotation. The combination of extreme U.S. valuation, minimal equity risk premium, and international performance is a late-cycle playbook rotation. Historically, when EAFE outperforms S&amp;P by &gt;500bp, it marks multi-year regime shifts (occurred 2002-2007, preceding financial crisis).</p>
+<p><strong>Data</strong>: S&amp;P 500 forward P/E 22.6x vs. 16.8x median (+34%); S&amp;P 600 equal-weight 15.2x vs. 16.6x median (-8%, rare discount). Ex-US MSCI ACWI 15.4x, trading -34.2% discount to S&amp;P 500 (near record). DXY +13.25% YTD; EM FX carnage (TRY -17.25%, INR -5.15%). MSCI EAFE local returns +14.6% negated by FX (-0.48% USD terms).<br />
+<strong>International</strong>: Europe (MSCI EAFE) P/E 13.9x vs. 17.3x median—cheap but structurally challenged (energy crisis, fiscal limits). Japan +21.12% (6M local), but Yen carry unwind risk lurks.<br />
+<strong>Implication</strong>: US exceptionalism priced to perfection; ex-US value trap unless DXY reverses. Foreign outflows accelerating—ACWI carry 2.1% vs. 1.7% avg signals capital repatriation. Tactical fade US growth/long ex-US value requires Fed dovish catalyst (not imminent).</p>
+<hr />
 <h3>8. Conclusion &amp; Trade Tilt</h3>
-<p><strong>Cross-Asset Confirmation:</strong> All major asset classes flashing caution: (1) Rates—bear-flattening curve with fiscal stress signaling policy box, (2) Credit—muni underperformance presaging broader stress despite compressed HY spreads, (3) Equities—extreme concentration/valuation with deteriorating breadth, (4) FX—dollar weakness despite rate advantage confirms capital rotation, (5) Commodities/Real Assets—underperformance suggests growth concerns. The regime is transitioning from "U.S. exceptionalism" to "valuation normalization" with fiscal/inflation crosscurrents preventing clean resolution.</p>
-<p><strong>Risk Rating:</strong> 7/10 (Elevated). Not systemic crisis, but multiple compression risk is high. The combination of 22.7x forward P/E, 2.44% equity risk premium, 1.92% real yields, and fiscal stress creates asymmetric downside. Primary risk: policy error (Fed cuts too late causing hard landing, or doesn't cut allowing financial conditions to tighten excessively). Secondary risk: fiscal event (muni stress spreading, debt ceiling crisis). Upside capped by valuation; downside open if multiple variables deteriorate simultaneously.</p>
-<p><strong>The Trade:</strong> 
-- <strong>Underweight:</strong> U.S. large-cap growth (especially Mag 7 given 29.5x vs. 20.2x ex-Mag7), long-duration credit (given 2.84% HY spreads and muni stress), U.S. dollar (tactical bounce possible but trend reversing)
-- <strong>Overweight:</strong> International equities (EAFE/Japan given 34% valuation discount), U.S. small-cap value (0.67x relative valuation extreme), short-duration quality credit (5yr corporates offer 4.8% with limited duration risk), real assets/TIPS (2.22% 5y5y inflation expectations underpriced)
-- <strong>Hedges:</strong> Long volatility (VIX term structure flat, options cheap), Treasury curve steepeners (2s10s at 67bp will normalize to 100-150bp range), short municipal exposure (direct or via HY munis given fiscal stress)</p>
-<p><strong>Triggers to Reassess:</strong>
-- <strong>Bullish reversal:</strong> 2s10s steepens above 100bp sustainably + 5y5y inflation expectations fall below 2.0% + S&amp;P 500 P/E compresses to 19x (suggesting healthy correction completed)
-- <strong>Bearish acceleration:</strong> 2s10s inverts + HY spreads widen above 4.0% + municipal distress spreads to state level (California, Illinois) + Mag 7 relative P/E breaks below 1.3x (currently 1.46x)
-- <strong>Regime confirmation:</strong> EAFE outperformance extends to +15% vs S&amp;P on 12-month basis + dollar index breaks below 95 + small-cap/large-cap ratio exceeds 0.75x</p>
-<p>The setup resembles late-2021/early-2022: extreme valuations, policy uncertainty, inflation persistence, and early rotation signals that preceded 20%+ drawdowns. Difference: credit stress emerging from public sector (munis) rather than private (mortgages), and international alternatives more attractive. Position defensively while maintaining exposure to beneficiaries of ongoing rotation.</p></div><div id="anthropic/claude-opus-4.5" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
+<p><strong>Cross-Asset Confirmation</strong>: Rates steepening + benign credit + narrow equity breadth + elevated inflation = late-cycle expansion with concentration risk. DXY strength contradicts global growth optimism; commodities weak despite inflation signals. Equity risk premium (2.44%) at decade lows incompatible with 4%+ 10yr—repricing risk high.  </p>
+<p><strong>Risk Rating</strong>: 6.5/10 (Elevated). Fundamentals stable (credit, earnings) but technicals/valuations stretched. Triple witching obscures true positioning; post-expiry clarity critical.  </p>
+<p><strong>The Trade</strong>:<br />
+- <strong>Underweight</strong>: Mag 7 / US large-cap growth (29.5x P/E unsustainable if 10yr &gt;4.5%).<br />
+- <strong>Overweight</strong>: Financials (benefit from curve), equal-weight S&amp;P 500 (valuation cushion), short-duration IG credit (carry + quality).<br />
+- <strong>Hedge</strong>: Long USD (DXY momentum intact), short 10yr Treasuries (fiscal premium underpriced), tail protection via VIX calls (risk premium compressed).  </p>
+<p><strong>Triggers to Flip Bearish</strong>:<br />
+1. 10yr yield sustained break above 4.50% (equity multiple compression).<br />
+2. Mag 7 earnings miss (concentrated drawdown risk).<br />
+3. Credit spreads widen &gt;50bp in 30 days (liquidity event).<br />
+4. Fed rhetoric shifts hawkish on inflation persistence (kills soft-landing narrative).  </p>
+<p><strong>Word Count</strong>: 998</p></div><div id="anthropic/claude-opus-4.5" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
 <table>
 <thead>
 <tr>
@@ -439,128 +514,58 @@
 <tr>
 <td>Growth Impulse</td>
 <td>6</td>
-<td>S&amp;P 500 YTD +16.6%, strong Mag 7 earnings growth (+26.1% fwd), but small-cap S&amp;P 600 lagging at +7.7% YTD. Earnings revisions ratio positive but moderating. Industrial sector healthy at +18.6% YTD.</td>
+<td>S&amp;P 500 YTD +16.6% with Communication Services (+31%) and Info Tech (+21%) leading; however, small-caps lagging (S&amp;P 600 +7.7% YTD) and recent FOMC hawkish pivot signals growth moderation ahead.</td>
 </tr>
 <tr>
 <td>Inflation Pressure</td>
 <td>5</td>
-<td>5Y5Y forward inflation at 2.22%, near the 1.92% min and below 2.67% max. TIPS yields show real rates elevated at 1.92% (10Y). Breakevens contained but not declining further.</td>
+<td>5Y5Y forward inflation at 2.22% near the historical average (2.25%); TIPS real yields elevated (~1.92% at 5Y, ~1.44% 10Y) suggest inflation expectations anchored but not fully conquered.</td>
 </tr>
 <tr>
 <td>Liquidity Conditions</td>
-<td>5</td>
-<td>Treasury yields falling across curve (3m down 1.66bps, 10Y down 3.51bps D-o-D). Fed easing path priced but gradual. Aggregate index YTD +1.25% suggests modest duration tailwind.</td>
+<td>4</td>
+<td>Treasury yields fell 3-4 bps across the curve day-over-day but remain elevated (10Y at 4.12%); curve still inverted 1m-3m, and FOMC signaled fewer cuts in 2026—tighter for longer.</td>
 </tr>
 <tr>
 <td>Credit Stress</td>
 <td>2</td>
-<td>HY spreads at 2.59%, near historic lows (min 2.41%, median 4.58%). IG corporates performing well (+2.71% YTD). Interest coverage S&amp;P 500 at 8.8x vs 6.6x median—exceptional.</td>
+<td>HY spreads at 2.59%, near cycle lows and well below the 3.95% median; IG corporate bonds positive QTD (+0.73%); no stress signals in credit markets.</td>
 </tr>
 <tr>
 <td>Valuation Risk</td>
 <td>7</td>
-<td>S&amp;P 500 fwd P/E at 22.7x vs 17.5x median (+30% premium). Equity risk premium compressed to 2.44% vs 5.15% median. Ex-US trades at 34% discount, providing relative value.</td>
+<td>S&amp;P 500 forward P/E at 22.7x vs. 17.5x median (+30% premium); equity risk premium compressed to 2.44% vs. 5.15% historical; Mag 7 trades at 29.5x with 53% index weight in expanded tech.</td>
 </tr>
 <tr>
 <td>Risk Appetite</td>
-<td>7</td>
-<td>Growth outperforming Value YTD (20.2% vs 12.7%). Communication Services +31.1%, Tech +21.3%. Small-cap value surging 1M (+8.03%). Mag 7 returns +20.9% YTD.</td>
+<td>5</td>
+<td>Small-cap value leading 1-month (+8.03%), value outperforming growth across styles; however, S&amp;P 500 drawdown -1.83% from 12/11 peak, and triple-witching/OPEX may distort positioning signals.</td>
 </tr>
 </tbody>
 </table>
 <h3>2. Executive Takeaway</h3>
-<p><strong>Regime Name:</strong> Late-Cycle Goldilocks with Valuation Tension. <strong>The Driver:</strong> Resilient corporate earnings, compressed credit spreads, and mega-cap tech leadership continue to power equity markets despite elevated valuations. The Treasury curve has shifted lower by 65-76bps across the 1-10Y tenors since year-end 2024, signaling the market expects a growth moderation without recession. <strong>The Pivot:</strong> The critical inflection point will be whether earnings growth (currently +23.2% forward for S&amp;P 500) can justify valuations that sit 30% above historical medians, or whether rising real rates (10Y TIPS at 1.92%) begin to compress multiples. Watch for breadth deterioration as the key early warning signal.</p>
+<p><strong>Regime Name:</strong> Late-Cycle Goldilocks Under Pressure. The market remains in a risk-on environment characterized by tight credit spreads and strong mega-cap leadership, but the Fed's hawkish December guidance has introduced friction. <strong>The Driver:</strong> Real rates staying elevated (10Y real at 1.92%) while the Fed signaled only two cuts in 2026, repricing terminal rate expectations higher. <strong>The Pivot:</strong> Watch credit spreads for any widening beyond 3% on HY and the 10Y nominal yield for a break above 4.50%—either would confirm a regime shift from "soft landing" to "no landing" with stagflationary risk. Today's triple-witching event adds mechanical noise; true directional signals should be evaluated next week.</p>
 <h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p><strong>Data:</strong> The Treasury yield curve shows nominal 10Y yields at 4.16% with real yields at 1.92%, implying breakeven inflation of approximately 2.24%. The Bloomberg U.S. Aggregate yield-to-worst sits at 4.30% with duration of 5.96 years. Long-duration Treasuries (10Y+) have posted -6.41% YTD returns despite recent curve rallies. Open interest in CME Interest Rate futures stands at 34.3 million contracts with combined volume of 40.7 million—indicating active hedging and repositioning.</p>
-<p><strong>Implication:</strong> The bond market is pricing a "soft landing" scenario with gradual Fed easing, but fiscal dynamics remain the wildcard. With 30Y yields at 4.83% and the long-end showing minimal rally (+0.05% change), term premium concerns persist. Portfolios should maintain neutral duration exposure, favoring the belly (5-7Y) over long-duration positions given fiscal supply risks.</p>
+<p><strong>Data:</strong> The Treasury curve has shifted lower by 60-75 bps year-over-year across maturities, but the 30Y yield actually rose +0.05% day-over-day even as the belly rallied. Bloomberg U.S. Treasury Long index is down -6.41% YTD despite positive QTD returns. The 10Y-2Y spread sits at +66 bps, and 10Y-3m at +51 bps—both steepening from year-ago levels. The Fed's Summary of Economic Projections now shows only 50 bps of cuts through 2026, down from prior expectations.</p>
+<p><strong>Implication:</strong> The term premium is reasserting itself at the long end, consistent with fiscal dominance concerns around sustained deficits. Long-duration assets remain vulnerable despite near-term relief rallies. The steepening bias suggests markets are pricing higher-for-longer nominal rates, not recession—a "bear steepener" dynamic that historically pressures equity valuations.</p>
 <h3>4. Rates &amp; Curve Profile</h3>
-<p><strong>Shape:</strong> The Treasury curve exhibits a mild positive slope from 2Y (3.46%) to 30Y (4.80%), with the 10Y-2Y spread at +66bps and 10Y-3M spread at +51bps. The curve has steepened meaningfully from December 2024 when the 10Y-2Y spread was only +33bps. The front-end has rallied more aggressively (-67 to -76bps across 1m-2Y) than the long-end (-8bps at 20Y, +5bps at 30Y).</p>
-<p><strong>Implication:</strong> This bear steepening pattern—where the front-end rallies on Fed cut expectations while the long-end holds firm on term premium—suggests markets are pricing normalization rather than recession. The 30Y bond barely participating in the rally signals ongoing supply/demand imbalance concerns. Position for curve steepeners via 2s10s or 5s30s, and favor floating-rate or short-duration credit over long Treasuries.</p>
+<p><strong>Shape:</strong> The curve is positively sloped from 2Y to 30Y (2Y: 3.46%, 10Y: 4.12%, 30Y: 4.80%) but remains inverted at the very front end (3m: 3.61% vs. 2Y: 3.46%). This is a "kinked" curve—normalization in progress but incomplete.</p>
+<p><strong>Implication:</strong> The belly of the curve (5Y-10Y) saw the largest day-over-day declines (-3.5 bps), reflecting expectations that the Fed may pause before reaching terminal. However, with the 30Y barely budging, long-end investors are demanding more term premium. For asset allocators, this favors intermediate duration (3-7Y) over barbell strategies. The TIPS curve shows real yields of 1.44%-2.48% across tenors, providing genuine real return opportunities not seen since pre-GFC—a structural shift favoring bonds in multi-asset portfolios.</p>
 <h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p><strong>Data:</strong> High-yield spreads at 2.59% represent the tightest levels since pre-GFC, sitting just 18bps above the all-time minimum of 2.41% and well below the 4.58% median. Investment-grade corporates yield 4.79% with 6.21 duration. The WisdomTree U.S. High Yield index is +6.03% YTD. S&amp;P 500 interest coverage ratios at 8.8x sit 33% above the 6.6x historical median, while cost of debt at 3.7% remains below the 4.6% median.</p>
-<p><strong>Implication:</strong> Credit markets are flashing "all clear"—perhaps too aggressively. With spreads at cycle tights and coverage ratios at historic highs, there is minimal compensation for taking credit risk. However, the asymmetry is concerning: limited upside from further tightening versus significant downside if economic conditions deteriorate. Recommend reducing high-yield exposure in favor of quality IG corporates or moving up in capital structure.</p>
+<p><strong>Data:</strong> ICE BofA High Yield spreads stand at 2.59%, just 18 bps above the all-time minimum of 2.41% and well below the 3.95% median. Investment-grade corporate bonds (WisdomTree U.S. Corporate Bond) returned +2.71% YTD with a 4.8% yield-to-worst at 6.2 years duration. Short-term corporate credit (+5.00% YTD) is outperforming. The S&amp;P 500 interest coverage ratio sits at 8.8x vs. 6.6x median—historically strong.</p>
+<p><strong>Implication:</strong> Credit markets are signaling no imminent recession. The combination of compressed spreads and robust interest coverage suggests corporate balance sheets remain healthy despite higher base rates. However, with spreads near historic tights, asymmetry is unfavorable: limited upside from further compression, meaningful downside if risk-off materializes. S&amp;P 600 small-caps show weaker coverage (2.3x vs. 3.6x median) and higher cost of debt (5.3%), flagging potential stress points if rates stay elevated.</p>
 <h3>6. The "Engine Room" (Market Breadth)</h3>
-<p><strong>Data:</strong> S&amp;P 500 is +16.6% YTD, but the equal-weighted S&amp;P 500 trails at +11.3%. The S&amp;P 600 (small-cap) has returned only +7.7% YTD, underperforming large-caps by nearly 9 percentage points. Within factors, Growth (+20.2%) leads Value (+12.7%), while Small-Cap (+12.8%) lags materially. The Mag 7 has contributed +20.9% YTD. Notably, 1-month returns show small-cap value surging (+8.03%), suggesting nascent rotation.</p>
-<p><strong>Implication:</strong> Market breadth remains narrow, with mega-cap tech dominating index-level returns. The S&amp;P 500 vs S&amp;P 600 relative valuation ratio at 0.67x (vs 1.05x median) indicates small-caps are historically cheap. The recent 1-month small-cap value outperformance (+8.03% vs +2.27% large growth) may signal early-stage rotation as rate expectations shift. Tactically increase small-cap value exposure to capture mean reversion.</p>
+<p><strong>Data:</strong> The S&amp;P 500 returned +16.6% YTD, but the equal-weighted S&amp;P 500 trails at +11.3%, a 530 bps gap indicating narrow leadership. Over the trailing month, small-cap value (+8.03%) and mid-cap value (+6.28%) outperformed large-cap growth (+2.27%), suggesting rotation. The Magnificent 7 accounts for approximately 30% of S&amp;P 500 market cap with a composite forward P/E of 29.5x.</p>
+<p><strong>Implication:</strong> Breadth is attempting to improve but remains structurally narrow. The YTD gap between cap-weighted and equal-weighted indices suggests the rally is still concentrated in mega-caps. However, the 1-month outperformance of value and small-caps may signal early rotation as rate expectations stabilize. Triple-witching flows today may amplify or distort this signal; confirmation requires follow-through into January.</p>
 <h3>7. Valuation &amp; "Smart Money"</h3>
-<p><strong>Data:</strong> S&amp;P 500 forward P/E at 22.7x sits 30% above the 17.5x historical median. The equity risk premium has compressed to 2.44%, less than half the 5.15% median. Expanded Tech trades at 28.0x forward earnings. Ex-Tech S&amp;P 500 trades at 19.1x, closer to fair value. International equities (Ex-US) trade at a 34.2% discount to U.S. on forward P/E (15.4x vs 23.4x).</p>
-<p><strong>International:</strong> MSCI EAFE Value is +41.6% YTD versus EAFE Growth at +18.5%—value massively outperforming internationally. Europe (+33.6% YTD) and Japan (+23.5% YTD) offer compelling relative value with forward P/Es 30-40% below U.S. equivalents. Emerging markets ex-China screen attractively with India at 17.9x forward P/E.</p>
-<p><strong>Implication:</strong> U.S. large-cap growth is priced for perfection while international value offers significant margin of safety. Smart money positioning suggests gradually rotating from U.S. mega-cap growth toward international developed value and U.S. small-cap value. The valuation divergence cannot persist indefinitely—either international catches up or U.S. compresses.</p>
+<p><strong>Data:</strong> The S&amp;P 500 forward P/E of 22.7x represents a 30% premium to the 17.5x historical median. The equity risk premium has compressed to 2.44% vs. the 5.15% long-run average—the lowest since the early 2000s. Expanded tech (53% of index) trades at 28.0x vs. 22.1x median. Critically, ex-tech S&amp;P 500 trades at 19.1x vs. 16.8x median—also elevated but less extreme.</p>
+<p><strong>International:</strong> MSCI EAFE trades at 15.4x forward P/E vs. 14.1x historical median, representing a 34.2% discount to U.S. equities—near record levels. European value (+17.1% 6-month in local terms) and Japan (+21.1%) are outperforming U.S. on local currency basis. The MSCI EAFE annualized carry vs. USD stands at 2.0%, providing FX tailwind for unhedged international exposure.</p>
+<p><strong>Implication:</strong> U.S. large-cap valuations price in near-perfection; the margin of safety is thin. International developed markets offer substantial relative value, particularly for long-term allocators. The earnings revision ratio for S&amp;P 500 remains positive but has moderated, suggesting expectations have largely caught up with fundamentals.</p>
 <h3>8. Conclusion &amp; Trade Tilt</h3>
-<p><strong>Cross-Asset Confirmation:</strong> Equities bullish but narrow, credit euphoric, rates pricing soft landing, volatility suppressed. The mosaic suggests late-cycle conditions with elevated complacency.</p>
-<p><strong>Risk Rating:</strong> 6/10 — Elevated but not extreme. Key risks include valuation compression, breadth deterioration, and unexpected inflation resurgence.</p>
-<p><strong>The Trade:</strong>
-- <strong>Overweight:</strong> U.S. small-cap value (S&amp;P 600 Value), International developed value (EAFE), 5-7Y investment-grade credit
-- <strong>Underweight:</strong> Long-duration Treasuries (20Y+), U.S. mega-cap growth (reduce Mag 7 concentration), High-yield credit
-- <strong>Curve:</strong> 2s10s steepeners; front-end receivers
-- <strong>FX:</strong> Neutral USD; favor EUR carry (+1.9%) versus JPY funding</p>
-<p><strong>Triggers:</strong> HY spreads widening above 3.50%, S&amp;P 500 equal-weight underperforming cap-weighted by &gt;5% over rolling 3-months, 10Y real yields exceeding 2.25%, or earnings revisions ratio turning negative. These would warrant defensive repositioning.</p></div><div id="openai/gpt-5.2" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
-<table>
-<thead>
-<tr>
-<th>Dial</th>
-<th style="text-align: right;">Score (0-10)</th>
-<th>Justification (Data Source: WisdomTree &amp; CME)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Growth Impulse</td>
-<td style="text-align: right;">7</td>
-<td>Risk assets are still compounding: S&amp;P 500 +16.6% YTD (12/18/25) with shallow drawdown (-1.83% from peak). Credit is “growth-friendly” with HY spreads tight at ~2.84% (WisdomTree), consistent with ongoing expansion rather than late-cycle stress.</td>
-</tr>
-<tr>
-<td>Inflation Pressure</td>
-<td style="text-align: right;">4</td>
-<td>Long-run inflation expectations look contained: 5y5y forward inflation ~2.22% (near its long-run average ~2.25%), and implied 5–10y breakevens are ~2.2% (10y nominal ~4.16% vs 10y TIPS ~1.92%) (WisdomTree).</td>
-</tr>
-<tr>
-<td>Liquidity Conditions</td>
-<td style="text-align: right;">6</td>
-<td>Market plumbing appears functional: CME exchange-wide open interest is very large (~115.5mm) and rising on the day (+~1.86mm), pointing to deep hedging capacity and two-way liquidity. Rates futures OI is concentrated in belly benchmarks (notably 5y/10y) (CME Sections 01 &amp; 09).</td>
-</tr>
-<tr>
-<td>Credit Stress</td>
-<td style="text-align: right;">2</td>
-<td>“Canary” is calm: HY OAS ~2.84% sits near cycle tights and below long-run medians (WisdomTree). Corporate fundamentals are not flashing acute stress: S&amp;P 500 interest coverage ~8.8 vs historical median 6.6 (WisdomTree).</td>
-</tr>
-<tr>
-<td>Valuation Risk</td>
-<td style="text-align: right;">8</td>
-<td>Equity risk compensation is thin: S&amp;P 500 forward P/E ~22.6x (vs median ~16.8x; ~34% premium) and equity risk premium ~2.44% (well below median ~5.15%) (WisdomTree). Concentration remains high (Mag 7 ~29.5x, Tesla ~200x) (WisdomTree).</td>
-</tr>
-<tr>
-<td>Risk Appetite</td>
-<td style="text-align: right;">8</td>
-<td>Investors are paying up for risk: HY total return +9.03% YTD and IG +7–8% YTD (WisdomTree), spreads are tight, and equities are near highs with modest drawdowns—classic “carry + momentum” behavior.</td>
-</tr>
-</tbody>
-</table>
-<h3>2. Executive Takeaway (5–7 sentences)</h3>
-<p><strong>Regime: “Goldilocks Carry, Fiscal-Shadowed.”</strong> The driver is a clean disinflation profile (5y5y ~2.22%) that allows markets to lean into carry and duration-sensitive assets, while credit remains extremely benign (HY spreads ~2.84%). The pivot risk is not near-term inflation but <strong>term premium/fiscal supply</strong>: real yields are still high (10y TIPS ~1.92%, 30y TIPS ~2.48%), and the curve is now positively sloped, signaling that investors demand compensation for holding the long end. Equities are behaving like liquidity is ample, but the <strong>price of perfection</strong> is elevated valuations and a low equity risk premium. Breadth is improving tactically (recent value/smalls stronger over 1 month), yet the strategic backdrop remains “expensive U.S., discounted ex-U.S.” The market is therefore tradable risk-on, but structurally fragile to any rates-led tightening in financial conditions.</p>
-<h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p><strong>Data:</strong> 30y nominal yield ~4.80% with long-end real yields elevated (30y TIPS ~2.48%); 10y real ~1.92% (WisdomTree).<br />
-<strong>Implication:</strong> The state of play is less “inflation spiral” and more <strong>high real discount rates</strong>—the bond market is demanding meaningful real compensation to warehouse duration. That’s the hallmark of fiscal/term-premium pressure: even with anchored inflation expectations, long rates can stay sticky, capping equity multiples and penalizing long-duration growth.</p>
-<h3>4. Rates &amp; Curve Profile</h3>
-<p><strong>Shape:</strong> A normalized, upward-sloping curve: 2y ~3.46%, 10y ~4.12%, 30y ~4.80%, with 10y–2y ~+66 bps and 10y–3m ~+51 bps (WisdomTree). CME OI is heaviest in 5y and 10y note futures (Section 09), consistent with belly-centric hedging and macro positioning.<br />
-<strong>Implication:</strong> The curve suggests the market has moved past inversion-driven recession hedging toward <strong>“soft landing + term premium”</strong> pricing. That supports carry strategies in the front end, but warns that long-end duration is the likely transmission channel for any renewed tightening in conditions (auction tails, term-premium shocks, deficit headlines).</p>
-<h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p><strong>Data:</strong> HY credit spreads ~2.84% (near historical lows; below long-run medians) and HY total return +9.03% YTD (WisdomTree). However, smaller companies look more rate-sensitive: S&amp;P 600 interest coverage ~2.3 vs historical median 3.6 (WisdomTree).<br />
-<strong>Implication:</strong> Credit is not pricing recession risk; it’s pricing <strong>stability</strong>. The vulnerability is not today’s default cycle, but <strong>refinancing sensitivity</strong> if long rates reprice higher (fiscal shock) or if earnings revisions roll over.</p>
-<h3>6. The "Engine Room" (Market Breadth)</h3>
-<p><strong>Data:</strong> Leadership remains large-cap skewed over longer horizons (S&amp;P 500 +16.6% YTD vs S&amp;P 400 +8.0% and S&amp;P 600 +7.7%) (WisdomTree). But the last month shows a tactical broadening: small/value cohorts led (e.g., small value +8.03% 1M; S&amp;P 600 +7.5% 1M vs S&amp;P 500 +2.5%) (WisdomTree).<br />
-<strong>Implication:</strong> The tape is improving beneath the surface—helpful for a risk-on extension—yet the cycle-to-date story is still <strong>concentration + duration sensitivity</strong>, leaving equities exposed to a rates-driven de-rating.</p>
-<h3>7. Valuation &amp; "Smart Money"</h3>
-<p><strong>Data:</strong> U.S. is expensive (forward P/E ~23.4x) versus ex-U.S. (~15.4x), with the international valuation discount about -34% versus a -16.6% historical median (WisdomTree). U.S. ERP ~2.44% is very low (WisdomTree). Meanwhile, ex-U.S. performance has improved recently (U.S. vs ex-U.S. relative YTD shows U.S. underperforming) and USD has been weaker versus EAFE currencies over 12M/YTD (WisdomTree FX tables).<br />
-<strong>Implication:</strong> “Smart money” risk-reward favors <strong>rotation rather than pure beta</strong>: owning cheaper non-U.S. value/cyclicals while being selective (or hedged) in U.S. mega-cap duration.</p>
-<h3>8. Conclusion &amp; Trade Tilt</h3>
-<p><strong>Cross-Asset Confirmation:</strong> Tight HY spreads + normalized curve + anchored 5y5y inflation = risk can work, but <strong>high real yields + low ERP</strong> = asymmetric downside if rates jump.<br />
-<strong>Risk Rating:</strong> <strong>Moderate (6.5/10)</strong>—good carry, but valuation and term-premium fragility.<br />
-<strong>The Trade (tilt, not a one-liner bet):</strong><br />
-- <strong>Equities:</strong> Overweight <strong>ex-U.S. value (EAFE value tilt)</strong> vs underweight <strong>U.S. mega-cap growth</strong> (valuation/discount-rate hedge).<br />
-- <strong>Rates:</strong> Prefer <strong>front-end carry</strong> (cash/T-bills) and avoid being structurally long the long bond; express duration views via the <strong>belly</strong> where CME liquidity is deepest.<br />
-- <strong>Credit:</strong> Stay <strong>IG carry</strong>, but add cheap convexity (index hedges) given ultra-tight HY spreads.  </p>
-<p><strong>Triggers:</strong> (1) HY OAS widening decisively above ~350 bps; (2) 10y real yields pushing materially above ~2% and staying there; (3) 5y5y inflation breaking above ~2.5%; (4) equity drawdowns expanding while curve bear-steepens—classic “term premium shock” signature.</p></div><div id="x-ai/grok-4.1-fast" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
+<p><strong>Cross-Asset Confirmation:</strong> Tight credit + elevated valuations + hawkish Fed = late-cycle "no landing" scenario. Bonds and credit agree there's no recession; equities price in continued earnings growth; rates suggest inflation is contained but real rates remain restrictive.</p>
+<p><strong>Risk Rating:</strong> 6/10. Elevated due to valuation compression, narrow breadth, and policy uncertainty, but offset by strong credit conditions and corporate fundamentals.</p>
+<p><strong>The Trade:</strong> Underweight U.S. large-cap growth; overweight U.S. small-cap value (S&amp;P 600 Value at 15.2x vs. 16.6x median with 8.42% discount to history), international developed value (EAFE at 34% discount), and intermediate-duration IG credit (4-7Y corporates offering 4.5-5% yields). Maintain neutral cash allocation given attractive money market rates above 4%.</p>
+<p><strong>Triggers:</strong> Upgrade equity risk if: (1) HY spreads remain sub-3% AND 10Y stabilizes below 4.25%; (2) breadth improves (equal-weight catches up to cap-weight). Downgrade if: (1) HY spreads breach 3.5%; (2) 10Y breaks 4.50%; (3) earnings revisions turn negative. Re-evaluate positioning post-triple-witching for cleaner directional signals.</p></div><div id="openai/gpt-5.2" class="model-content" style="display: none;"><p>OpenRouter Error: Expecting value: line 175 column 1 (char 957)</p></div><div id="x-ai/grok-4.1-fast" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
 <table>
 <thead>
 <tr>
@@ -572,52 +577,51 @@
 <tbody>
 <tr>
 <td>Growth Impulse</td>
-<td>8</td>
-<td>Sharp rise in Treasury yields (2Y to 4.64%, 10Y to 4.24%) and real yields (10Y real ~2.2%) signals robust growth repricing; sector rotation to value/cyclicals (e.g., Materials +3.4% 1M) supports momentum (WisdomTree yields/performance tables).</td>
+<td>6</td>
+<td>WisdomTree sector tables show Tech/Comm Services outperforming 1m/3m (+2-5% leads), but cyclicals (Energy/Materials) lagging (-1-3%); CME Equity Index OI elevated in Nasdaq/Dow signals rotation but Triple Witching distorts.</td>
 </tr>
 <tr>
 <td>Inflation Pressure</td>
-<td>4</td>
-<td>5Y fwd inf expec stable ~2.3-2.5%, down from peaks with mean reversion; no reacceleration in 5Y5Y TIPS (WisdomTree inf expec charts).</td>
+<td>3</td>
+<td>WisdomTree 5y/5y5y fwd inflation expec stable near 2.3-2.5% lows (down from peaks), real yields rising modestly but contained; no CME rates spike.</td>
 </tr>
 <tr>
 <td>Liquidity Conditions</td>
-<td>7</td>
-<td>Elevated CME equity index and Treasury futures volume/OI (e.g., S&amp;P futures OI &gt;2.5M, 10Y notes vol &gt;5M); no overt tightening despite issuance (CME Bulletin Sec 01, WisdomTree duration tables).</td>
+<td>5</td>
+<td>WisdomTree asset class durations neutral (Agg 6.0, HY 3.2), carry flat; CME Bulletin Vol 01 shows rates vol surge post-FOMC/OPEX but OI steady, implying balanced liquidity.</td>
 </tr>
 <tr>
 <td>Credit Stress</td>
-<td>4</td>
-<td>HY spreads spiking to ~380bps (above 300bps avg line), recent peaks mirroring 2023 volatility; IG stable but widening (WisdomTree HY spread charts).</td>
+<td>2</td>
+<td>WisdomTree HY spreads tight at ~2.8% (near lows, post-spike drop), IG stable; no widening in charts.</td>
 </tr>
 <tr>
 <td>Valuation Risk</td>
-<td>3</td>
-<td>S&amp;P 500 fwd P/E 20.6x vs hist med 18.6x; ERP compressed ~4.3% vs 5% avg; Tech P/E extremes (WisdomTree P/E, ERP charts).</td>
+<td>8</td>
+<td>WisdomTree S&amp;P P/E ~22x (above hist med 18x), fwd P/E 20x elevated vs earnings yield compression; style box shows Growth overweight.</td>
 </tr>
 <tr>
 <td>Risk Appetite</td>
-<td>6</td>
-<td>Narrow leadership (Tech/Comms +5.1%/+3.4% 1M); large value outperforming (+2.9% vs growth -0.5%), US &gt; Intl (MSCI ACWI ex-US -2.6% 1M); breadth softening (% new highs low) (WisdomTree style/sector/country tables).</td>
+<td>7</td>
+<td>CME Equity Section 11 OI records in ES/NQ (~2.5M/1M contracts), vol high on OPEX but net long bias; WisdomTree breadth rolling % low but EM currencies carry up.</td>
 </tr>
 </tbody>
 </table>
 <h3>2. Executive Takeaway (5–7 sentences)</h3>
-<p><strong>Reflation Repricing Regime, Yield Shock Driver, Fed Patience Pivot.</strong> Markets are grappling with a violent yield surge, with 10Y Treasuries hitting 4.24% amid fiscal supply pressures and resilient growth data, forcing a reassessment of "soft landing" odds. Equities hold firm on narrow Tech leadership, but rotation to value/cyclicals hints at broadening participation if yields stabilize. Inflation remains tame at ~2.3% fwd expectations, muting hawkish Fed risks, yet HY spreads at 380bps signal credit fragility. Liquidity is ample per CME futures activity, but fiscal dominance looms as deficit spending swells issuance. The pivot hinges on Dec FOMC dots and CPI prints—dovish tilt could cap yields at 4.5%, unleashing risk assets; persistent strength risks 5% 10Y. Overall, tilt defensive cyclicals over growth, fade duration.</p>
+<p><strong>Late-Cycle Reflation Regime, Fiscal Overhang &amp; Tech Resilience, Fed Pause Pivot.</strong> Post-FOMC and amid Triple Witching/Monthly OPEX distortions (notes flag volatility, downgrade directional signals), markets show resilient risk appetite despite poor breadth. Tech/Communications lead sectors (WisdomTree +2-5% 1-3m), buoyed by AI themes, while cyclicals lag amid rising real yields (~2.1% 10y TIPS). Inflation remains anchored low (5y5y expec ~2.4%), but fiscal dominance looms via term premium creep. Curve steepening hints at growth bets, yet high valuations (S&amp;P 22x P/E) cap upside. Pivot hinges on next CPI/employment softening Fed rhetoric. Overall, tactical overweight quality growth, hedge with rates shorts.</p>
 <h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p>CME Bulletin Sec 01 shows record Treasury futures OI (10Y notes &gt;4.1M contracts, 5Y &gt;5.2M) and volume spikes (&gt;6M daily avg), reflecting massive issuance absorption amid $1T+ quarterly supply; WisdomTree real yield curves confirm 10Y real yields ~2.2% (up 50bps 3M), pressuring Fed independence. Implication: Fiscal tailwinds dominate monetary policy, crowding out privates and capping rate cuts—monitor QT taper signals, as dominance risks "bond vigilante" reemergence if deficits hit 7% GDP.</p>
+<p>WisdomTree charts reveal 10y term premium grinding higher (~0.8% from Nov lows) amid Bloomberg Agg Yield up 4.2% WoW, with floating supply pressuring reserves (UST floating rate notes +0.9% MoM). Post-FOMC, CME Rates Vol 01 shows 10y/30y futures OI ~4M contracts steady but volume +50% on expiry rolls, signaling mechanical unwind rather than panic. Implication: Mild monetary stress from fiscal bloat (debt carry ~4.5%), but no dominance yet—watch if term premium &gt;1% for QT taper signals; supports duration caution.</p>
 <h3>4. Rates &amp; Curve Profile</h3>
-<p>CME Rates Curve Sec 09/WisdomTree overlays depict a humped-flat profile: 2Y at 4.64% (steep short-end inversion unwind), 5-10Y trough ~4.2-4.25%, 30Y 4.48% (long steepener +28bps); breakevens stable ~2.3%. Implication: Bull flattener paused, signaling peak Fed funds priced (~5.3%) with growth repricing over recession fears; vulnerability to supply-driven bear steepener if auctions tail, favoring 5s30s receivers or short 2s10s if curve un-inverts below 0bps.</p>
+<p>CME Section 09 Treasury futures curve (implied yields) profiles bear flattener: 2y ~4.1%, 5y ~3.9%, 10y ~4.2%, 30y ~4.4%—modest steepener off Sep lows but humped mid-curve (WisdomTree yield plot confirms 5-10y peak ~4.25%). WisdomTree real yield curve up ~20bps across, TIPS curve parallel shift. Implication: Growth repricing post-FOMC (no cuts), but sticky shorts limit bull steepener; favors 5s10s receivers if Fed pauses, volatility pinned high on OPEX (CME vol ~12%).</p>
 <h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p>WisdomTree HY spread chart spikes to 378bps (Dec peak, +100bps from Nov lows), with option-adjusted spreads echoing mid-2023 stress; IG Corps stable at ~100bps but IG/HY ratio compressing. Implication: Early warning of funding stress amid yield volatility—canary chirping but not dead; tactical underweight HY/EM credit, pivot to floating-rate notes if spreads hold 350bps; breach 400bps triggers defensive de-leveraging.</p>
+<p>WisdomTree HY spreads ~280bps (tight vs hist avg 500bps), post-Oct spike to 350bps now reverting sharply; option-adjusted IG ~90bps stable. No vol clusters in charts, current below median. Implication: Canary chirping softly—resilient credit supports equity risk, but watch for fiscal yield spillovers widening spreads &gt;350bps as stress trigger; low stress dials risk-on for now.</p>
 <h3>6. The "Engine Room" (Market Breadth)</h3>
-<p>WisdomTree breadth metrics show Nasdaq % above 50-day ~42% (rolling avg downtrend), S&amp;P % new 52W highs ~15% (multi-month lows); equal-weight S&amp;P breadth narrowing vs cap-weight +2% 1M. Implication: Leadership confined to Magnificent 7 (MSFT/NVDA +20-30% CY), vulnerable to mean reversion; healthy engines need &gt;25% breadth participation—underweight narrow indices, favor RW rotation ETFs if % highs rebound above 20%.</p>
+<p>WisdomTree S&amp;P % above 200d MA ~35% (decile low), Nasdaq breadth rolling 52% (narrowing from 65%), EM breadth % up but US equal-weight lags cap-weight +2%. Sector dispersion high: Tech +3% vs Staples flat 1m. Implication: Narrow leadership (Mag7 ~30% S&amp;P wt, P/E contrib elevated) signals fragility despite index highs; OPEX flows (CME ES vol 2.4M) mask underlying weakness—breadth &lt;30% flips bearish.</p>
 <h3>7. Valuation &amp; "Smart Money"</h3>
-<p>S&amp;P fwd P/E 20.6x (top quartile vs hist), Tech 28x median, ERP ~4.3% (compressed); Intl cheap (MSCI EAFE 13.5x fwd vs US 20x), EM 11x with 15% EPS growth. Smart money flows: WisdomTree Intl rel perf -3% to US (trailing 12M), EM carry weak; style tilt large value (P/E 15x, +2% rel growth). Implication: US stretched, ripe for Intl/EM catch-up (target 15% rel outperf if USDX &lt;102); trim mega-cap Tech, allocate 20% to EAFE value/cyclicals for asymmetry.</p>
+<p>S&amp;P fwd P/E 20.2x (top quartile hist), Tech ~28x vs Value 15x (WisdomTree); interest coverage ~5.3x med (deteriorating from 6x). International laggards: Euro SM -2% vs US +3% 1m, Japan flat, EM +1% on carry (WisdomTree tables); US ex-US rel perf ~62% percentile high. "Smart money" flows tilt DM quality (CME NQ OI +10% post-FOMC). Implication: US exceptionalism stretched (rel val gap ~4x earnings), intl cheap entry if USD softens; cap tactical US Tech trim for EM rotation.</p>
 <h3>8. Conclusion &amp; Trade Tilt</h3>
-<p>Cross-asset confirmation: Yields &gt; equities resilience &gt; credit wobble aligns with reflation without panic; no liquidity cliff despite CME OI surge. <strong>Risk Rating: Yellow (Proceed with Tilt).</strong> <strong>The Trade: Long cyclical value (XLF/XLI)/short duration (ED/TY); 10% Intl EM overlay.</strong> Triggers: Bullish—FOMC dots &lt;100bps 2024 cuts (buy dips); Bearish—HY &gt;400bps or 10Y &gt;4.5% (cash/TIPS pivot). Position for 5-10% 10Y grind higher, equities +5% CY with 60/40 rebalance.</p>
-<p>(Word count: 852)</p></div><div id="qwen/qwen3-vl-30b-a3b-thinking" class="model-content" style="display: none;"><p>OpenRouter Error: 'choices'</p></div><div id="meta-llama/llama-4-scout" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
-<p>To calculate the scores, we will analyze the provided visual data.</p>
+<p>Cross-asset confirmation aligns: Equities resilient (CME ES/NQ OI records despite OPEX noise), rates steepening, credit tight—late-cycle melt-up intact but breadth/vals warn. Risk Rating: YELLOW (medium, vol elevated post-FOMC/Triple Witching). <strong>The Trade</strong>: Long Nasdaq futures (NQ) vs short 10y Treasury futures (ZN), sized 2:1 delta (target +150bps curve, +5% NQ); overweight EM FX carry (USDJPY short tail). Triggers: Upside on breadth &gt;40% or CPI &lt;2.5% y/y (Jan 15); downside exit if HY &gt;350bps or 10y yield &gt;4.5%. Total tilt: Bullish tilt with hedges, position for Fed pause grind.</p>
+<p>(Word count: 852)</p></div><div id="qwen/qwen3-vl-30b-a3b-thinking" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
 <table>
 <thead>
 <tr>
@@ -630,49 +634,117 @@
 <tr>
 <td>Growth Impulse</td>
 <td>5</td>
-<td>The growth impulse score is 5, as indicated by stable but unspectacular economic data.</td>
+<td>S&amp;P 500 YTD return (16.45%) and sector strength in Tech/Healthcare (Page 24, 25) suggest moderate growth, but lagging small caps (S&amp;P 600: 7.7% YTD) and Energy/Utilities weakness indicate uneven momentum.</td>
 </tr>
 <tr>
 <td>Inflation Pressure</td>
-<td>3</td>
-<td>Inflation pressure is moderate, with inflation expectations around 2%.</td>
+<td>4</td>
+<td>5-Year Forward Inflation Expectation (2.22%) (Page 5) is stable, but the TIPS yield curve (Page 2) and inflation-linked Treasury index (-0.42% month-to-date) hint at mild deflationary pressure.</td>
 </tr>
 <tr>
 <td>Liquidity Conditions</td>
-<td>7</td>
-<td>Liquidity conditions are favorable, with ample liquidity in the financial system.</td>
+<td>4</td>
+<td>Treasury yield curve is flattened (10-yr/2-yr spread: 0.33%) (Page 3), signaling potential liquidity constraints. CME volume/OI (Page 26) shows strong participation but no clear liquidity easing.</td>
 </tr>
 <tr>
 <td>Credit Stress</td>
-<td>2</td>
-<td>Credit stress is low, with credit spreads narrow.</td>
+<td>8</td>
+<td>High-Yield Credit Spreads (2.41%) (Page 4) are near historical lows (median: 2.84%), indicating minimal credit stress.</td>
 </tr>
 <tr>
 <td>Valuation Risk</td>
-<td>8</td>
-<td>Valuation risk is high, with equity markets at elevated valuations.</td>
+<td>7</td>
+<td>S&amp;P 500 forward P/E (22.6x) is 34.2% above historical median (16.8x) (Page 20), with large caps significantly more expensive than small caps (S&amp;P 600: 15.2x).</td>
 </tr>
 <tr>
 <td>Risk Appetite</td>
 <td>6</td>
-<td>Risk appetite is neutral, with investors cautious but not overly risk-averse.</td>
+<td>US outperformance (70.98% YTD for 12/31/19–12/18/25) (Page 14) and low equity risk premium (2.44% vs. 5.15% median) (Page 19) signal cautious optimism, but sector concentration in Tech/Ex-Tech (Page 22) hints at risk aversion.</td>
 </tr>
 </tbody>
 </table>
 <h3>2. Executive Takeaway (5–7 sentences)</h3>
-<p>The current market regime is characterized by a balance between growth and inflation concerns. The driver of the market is the ongoing economic recovery, with a pivot expected from the Federal Reserve to maintain stability. The "Fiscal Dominance" check reveals that monetary stress is low, but fiscal policy is supportive. The rates curve profile is upward-sloping, indicating a positive outlook for economic growth. Credit stress is minimal, and market breadth is healthy. Overall, the market outlook is cautiously optimistic.</p>
+<p><strong>Regime Name:</strong> Growth-Driven Repricing<br />
+<strong>The Driver:</strong> Strong corporate earnings, resilient US consumer data, and stable credit conditions are sustaining equity gains, but elevated valuations and narrow market breadth create vulnerability.<br />
+<strong>The Pivot:</strong> A spike in inflation expectations (above 2.5%) or a sudden widening of credit spreads would trigger a risk-off shift, as the market’s current optimism relies on low inflation and high liquidity.  </p>
 <h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p>The fiscal dominance check indicates that monetary stress is low, with the Federal Reserve maintaining a supportive stance. The implication is that fiscal policy will continue to play a key role in supporting economic growth. </p>
+<p><strong>Data:</strong> The Treasury yield curve is flattened (10-yr/2-yr spread: 0.33%) (Page 3), and the S&amp;P 500 Interest Coverage Ratio (8.8x) exceeds historical median (6.6x) (Page 23), suggesting corporations can service debt despite fiscal deficits.<br />
+<strong>Implication:</strong> Fiscal policy is not yet overriding monetary policy, but the yield curve’s flattening hints at investor concerns about long-term fiscal sustainability. If deficits accelerate without matching growth, monetary policy may face constraints, amplifying inflation risks.  </p>
 <h3>4. Rates &amp; Curve Profile</h3>
-<p>The shape of the rates curve is upward-sloping, indicating a positive outlook for economic growth. The implication is that long-term interest rates are expected to rise, reflecting increased economic activity.</p>
+<p><strong>Shape:</strong> Flattening yield curve (10-yr yield: 4.58%; 2-yr: 4.25%) with a shallow inversion.<br />
+<strong>Implication:</strong> The market expects slowing growth but not a recession, reflecting cautious optimism. A deeper inversion (e.g., 10-yr/2-yr &lt; 0%) would signal strong downside risk, while a steepening curve (e.g., 10-yr/2-yr &gt; 0.5%) would signal confidence in growth.  </p>
 <h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p>The canary in the coal mine is the credit market, which is showing minimal stress. The implication is that investors are not yet concerned about creditworthiness, but this could change if economic conditions deteriorate.</p>
+<p><strong>Data:</strong> High-Yield Credit Spreads are at 2.41% (Page 4), significantly below the historical median (2.84% for 1/2/15–9/1/25).<br />
+<strong>Implication:</strong> Credit conditions remain robust, but this “canary” is a warning: if spreads widen beyond 3.0%, it would signal rising defaults or tightening financial conditions, triggering a risk-off move.  </p>
 <h3>6. The "Engine Room" (Market Breadth)</h3>
-<p>The engine room of the market is the S&amp;P 500 index, which is showing healthy breadth. The implication is that the market rally is broad-based, with many stocks participating.</p>
+<p><strong>Data:</strong> S&amp;P 500 12-month growth (20.15%) is driven by large-cap Tech (53% index weight) (Page 22), while small caps (S&amp;P 600) lag (7.5% YTD). Market drawdowns are shallow (S&amp;P 500: -1.83%) (Page 13), but breadth metrics show concentration.<br />
+<strong>Implication:</strong> Market breadth is weak, as performance is concentrated in a few sectors. If large-cap Tech underperforms (e.g., due to rate hikes), the market could correct sharply.  </p>
 <h3>7. Valuation &amp; "Smart Money"</h3>
-<p>The valuation of the S&amp;P 500 index is elevated, with a forward P/E ratio above 20x. The implication is that investors should be cautious about buying into the market at current levels. International equities, however, offer more attractive valuations.</p>
+<p><strong>Data:</strong> US equities are overvalued (S&amp;P 500 forward P/E: 22.6x vs. 16.8x median), while international equities trade at a 34.2% discount to US P/E (Page 14). Smart money favors small caps (S&amp;P 600: 7.5% YTD) and international (MSCI ACWI Small: 2.68% 1-month) (Page 12).<br />
+<strong>Implication:</strong> The market is overexposed to expensive large caps. Smart money is rotating into international and small-cap opportunities, suggesting a potential shift toward value and diversification.  </p>
 <h3>8. Conclusion &amp; Trade Tilt</h3>
-<p>The cross-asset confirmation is that the market is in a risk-on environment, with equities and credit markets performing well. The risk rating is moderate, with a cautious outlook. The trade tilt is to favor equities over bonds, with a focus on quality and value. Triggers for a change in the trade tilt include a significant increase in interest rates or a decline in economic growth.</p></div><div id="nvidia/nemotron-nano-12b-v2-vl" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
+<p><strong>Cross-Asset Confirmation:</strong> US equities (large caps) are strong but expensive; international and small caps are undervalued but lagging. Treasuries are supported by growth concerns.<br />
+<strong>Risk Rating:</strong> Medium (elevated valuations + narrow breadth increase downside risk).<br />
+<strong>The Trade:</strong> Long US large caps (Tech, Energy), short international equities, and long 10-yr Treasuries. Hedge with put options on S&amp;P 500.<br />
+<strong>Triggers:</strong> Inflation &gt;2.5%, credit spreads &gt;3.0%, or small-cap underperformance exceeding 5% YoY.  </p>
+<hr />
+<p><strong>Word Count:</strong> 998</p></div><div id="meta-llama/llama-4-scout" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
+<p>To create the dashboard scoreboard, we will analyze the provided visual data from the WisdomTree Dashboard and CME.</p>
+<table>
+<thead>
+<tr>
+<th>Dial</th>
+<th>Score (0-10)</th>
+<th>Justification (Data Source: WisdomTree &amp; CME)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Growth Impulse</td>
+<td>5</td>
+<td>The 10-year nominal yield has decreased slightly, and the 10-year TIPS yield has increased slightly. This mixed signal suggests a neutral growth impulse.</td>
+</tr>
+<tr>
+<td>Inflation Pressure</td>
+<td>4</td>
+<td>The 5-year, 5-year forward inflation expectation rate is at 2.22%, slightly below the historical average. This suggests moderate inflation pressure.</td>
+</tr>
+<tr>
+<td>Liquidity Conditions</td>
+<td>7</td>
+<td>The high yield credit spreads have tightened, indicating ample liquidity.</td>
+</tr>
+<tr>
+<td>Credit Stress</td>
+<td>8</td>
+<td>The overall combined open interest has increased, and there is no significant stress in credit markets.</td>
+</tr>
+<tr>
+<td>Valuation Risk</td>
+<td>6</td>
+<td>The S&amp;P 500 index is trading at 22.7x, above its historical median, indicating some valuation risk.</td>
+</tr>
+<tr>
+<td>Risk Appetite</td>
+<td>7</td>
+<td>The S&amp;P 500 index has returned 16.6% year-to-date, and the MSCI EAFE index has returned 12.75% year-to-date, indicating a positive risk appetite.</td>
+</tr>
+</tbody>
+</table>
+<h3>2. Executive Takeaway (5–7 sentences)</h3>
+<p>The current market regime is characterized by a moderate growth impulse, moderate inflation pressure, ample liquidity, and positive risk appetite. The driver of the current regime is the monetary policy, which has kept interest rates stable. The pivot point for the market is the potential change in monetary policy, which could affect growth and inflation expectations. The market is likely to continue to focus on economic data and central bank communications. The current market conditions suggest a cautious optimism, with investors monitoring economic data and central bank actions. The market is expected to remain volatile in the near term.</p>
+<h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
+<p>The fiscal dominance check, or monetary stress, is measured by the interest rate volatility and the change in the Treasury yield curve. The 10-year Treasury yield has decreased slightly, and the 2-year Treasury yield has decreased slightly as well. This suggests that there is no significant monetary stress at the moment.</p>
+<h3>4. Rates &amp; Curve Profile</h3>
+<p>The Treasury yield curve has slightly flattened, with the 10-year yield decreasing by 3.51 basis points and the 2-year yield decreasing by 2.29 basis points. This suggests that the market is pricing in a slightly lower growth and inflation outlook.</p>
+<h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
+<p>The "canary in the coal mine" for credit stress is the high yield credit spreads. The high yield credit spreads have tightened, indicating that there is no significant stress in credit markets.</p>
+<h3>6. The "Engine Room" (Market Breadth)</h3>
+<p>The market breadth, or the "engine room," is measured by the performance of various sectors and industries. The S&amp;P 500 index has returned 16.6% year-to-date, with the top-performing sectors being Communication Services, Information Technology, and Consumer Discretionary.</p>
+<h3>7. Valuation &amp; "Smart Money"</h3>
+<p>The S&amp;P 500 index is trading at 22.7x, above its historical median, indicating some valuation risk. However, the "smart money" investors, such as hedge funds and institutional investors, are still invested in the market, with the MSCI EAFE index returning 12.75% year-to-date.</p>
+<h3>8. Conclusion &amp; Trade Tilt</h3>
+<p>The cross-asset confirmation suggests that the market is likely to continue to focus on economic data and central bank communications. The risk rating for the market is moderate, with a score of 5 out of 10. The trade tilt is to remain cautious, with a focus on sectors and industries that are expected to perform well in a moderate growth environment. The triggers for a change in the trade tilt are changes in monetary policy, economic data, and corporate earnings reports.</p></div><div id="nvidia/nemotron-nano-12b-v2-vl" class="model-content" style="display: none;"><h3>1. The Dashboard (Scoreboard)</h3>
 <table>
 <thead>
 <tr>
@@ -684,72 +756,72 @@
 <tbody>
 <tr>
 <td><strong>Growth Impulse</strong></td>
-<td>5</td>
-<td>ECB OPEX (-1.4%) and USD 10-Yr Yield to Worst (positive but low) suggest tepid growth support. Real yield curve inversion steepening aligns with historical slowdown.</td>
+<td>6</td>
+<td>Steepening Treasury curve (5.74% at 10Y vs. 0.23% at 1M) signals growth expectations. S&amp;P 600 ex-Mag7 underperforms at 2.9% YTD vs. S&amp;P 500’s 3.5%, limiting breadth.</td>
 </tr>
 <tr>
 <td><strong>Inflation Pressure</strong></td>
-<td>7</td>
-<td>5-Year Forward Inflation Expectation Rate at 2.67% above Fed target highlights elevated expectations.</td>
+<td>8</td>
+<td>5Y-5Y forward inflation expectations at 2.67% (↑91bps since 2023). TIPs yield curve flattened (-0.08bps over 1y).</td>
 </tr>
 <tr>
 <td><strong>Liquidity Conditions</strong></td>
-<td>6</td>
-<td>Credit spreads (Bloomberg US Aggregate Enhanced at 6.85%) and high-yield spreads widening signal tightening liquidity.</td>
+<td>5</td>
+<td>Crunch in post-Fed 1-year rates (-0.65% intraday vs. -0.63% prior) suggests tighter liquidity.</td>
 </tr>
 <tr>
 <td><strong>Credit Stress</strong></td>
 <td>7</td>
-<td>ICE BofA US High Yield Index at 4.58% and widening spreads reflect elevated risk premiums.</td>
+<td>HY spreads reached 21.82% (Dec 1996 peak). Credit curves for 10Y Muni (1.59%) and HY Corporate Bond (4.17%) reflect stress.</td>
 </tr>
 <tr>
 <td><strong>Valuation Risk</strong></td>
-<td>6</td>
-<td>S&amp;P 500 Forward P/E at 20.3x vs. historical median (16.8x) indicates stretched valuations.</td>
+<td>9</td>
+<td>S&amp;P 500 forward P/E at 22.6x (↑29% from ‘20) exceeds historical median (17.3x). Mag7 stocks trade at 53% Weight with flash highs (Tech: 52% → 37.5% of S&amp;P 500).</td>
 </tr>
 <tr>
 <td><strong>Risk Appetite</strong></td>
-<td>5</td>
-<td>Elevated equity risk premiums and low market breadth suggest cautious positioning.</td>
+<td>4</td>
+<td>Crypto volatility at 11.5% (↑1.75% from prior) signals cautious risk pricing. US vs. Ex-US relative performance reversed (-13.24% YTD) after months of strength.</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h3>2. Executive Takeaway (Regime, Driver, Pivot)</h3>
-<p><strong>Regime</strong>: <em>Growth vs. Inflation Regime Conflict</em><br />
-<strong>The Driver</strong>: Escalating inflation expectations (5-Year Forward Rate at +2.67%) and central bank rate hikes (ECB -1.4%, Fed -7.25% to -5.25%) are stifling growth metrics.<br />
-<strong>The Pivot</strong>: A soft landing is now the base case, but elevated credit spreads (S&amp;P 500 Enhanced Yield at 6.85%) and high yield market fragility could trigger forced selling, forcing a Fed pivot toward inflation control over growth.  </p>
+<h3>2. Executive Takeaway (5–7 sentences)</h3>
+<p><strong>Regime:</strong> <em>Inflation Complacency in a Sticky Growth Environment</em><br />
+<strong>The Driver:</strong> Hybrid "higher-for-longer" rate environment sustains elevated long-term yields despite disinflationary metrics. Core CPI (3.3%) and wage growth (4.2%) create tension.<br />
+<strong>The Pivot:</strong> Analysts downgrade 2026 EPS forecasts (-1.8% consensus miss). Fed stress tests hint at prolonged QT tightening. Pivot from growth to defensives.  </p>
 <hr />
 <h3>3. The "Fiscal Dominance" Check (Monetary Stress)</h3>
-<p><strong>Data</strong>: Real US Treasury yield curve (10y2y) steepens to -5.9bps (WisdomTree), below long-term average of -2.6bps.<br />
-<strong>Implication</strong>: Structural fiscal dominance favors rate suppression, but inverse yield curve steepening (CME) signals rising bond supply pressures, threatening margin of safety.  </p>
+<p><strong>Data:</strong> CME Treasury futures show $4.8T 30Y and $3.5T 10Y priced at 4.8% and 4.2%, respectively.<br />
+<strong>Implication:</strong> Treasury issuance at 8.2% of GDP (Q3 2025) vs. 7.2% avg since 2020 strains liquidity, pressuring rates. Indicates fiscal imbalance outweighing Fed easing.  </p>
 <hr />
 <h3>4. Rates &amp; Curve Profile</h3>
-<p><strong>Shape</strong>: Inverted (10y2y at -5.9bps) with steepening overnight (1M-3M at 0.65 vs 0.45).<br />
-<strong>Implication</strong>: Persistent inversion signals recession risk, while steepening implies a stalled reflation trade. Bulls need clarity on Fed holdout bets.  </p>
+<p><strong>Shape:</strong> Ultra-steep curve (5Y-10Y: +0.48bps, 10Y-30Y: +0.56bps).<br />
+<strong>Implication:</strong> Market bets on persistent inflation. Steepness contradicts Fed’s “higher-for-longer” stance but reflects risk premium pricing.  </p>
 <hr />
 <h3>5. The "Canary in the Coal Mine" (Credit Stress)</h3>
-<p><strong>Data</strong>: ICE BofA US High Yield Index at 4.58% (Bloomberg AGGG at 6.85%), Harvard Law Student down 5% YTD.<br />
-<strong>Implication</strong>: High yield exodus continues, risking contagion if Fed funds rate hike (-0.25%) outpaces credit spread contraction.  </p>
+<p><strong>Data:</strong> CTAINT-20 (10y Muni) yield 1.59% (up 25bps MoM); ICE BY Index (HY) yield 4.17% (↑180bps since ’23).<br />
+<strong>Implication:</strong> High yields on risky assets signal flight to safety. Municipal defaults may rise as state budgets face revenue shortfalls.  </p>
 <hr />
 <h3>6. The "Engine Room" (Market Breadth)</h3>
-<p><strong>Data</strong>: S&amp;P 500 breadth narrows (2,900 stocks up vs. 4,460 total); Tech sectors dominate (31.1% S&amp;P 500 weight).<br />
-<strong>Implication</strong>: Investment-grade stocks underperform (S&amp;P 500 Value Forward P/E at 39.53 vs Growth’s 26.73), signaling sector rotation.  </p>
+<p><strong>Data:</strong> S&amp;P 600 (Small Caps) underperforms S&amp;P 500 by 1.6%, underperforming S&amp;P 400 by 1.8%.<br />
+<strong>Implication:</strong> Absence of small-cap rotation confirms magcap dominance. Breadth remains fragile despite AI-driven rally.  </p>
 <hr />
 <h3>7. Valuation &amp; "Smart Money"</h3>
-<p><strong>International Divergence</strong>: US Spot - $21,800B vs Ex-US $15,305B (FTSEMIB vs MSCI ACWI); ex-US discounts now -34.2% (CME).<br />
-<strong>Implication</strong>: US-centric tech-driven rally persists, but cyclical/mid-cap weakness warns of anomaly.  </p>
+<p><strong>Data:</strong> S&amp;P 500 forward P/E at 22.6x (↑100bps from 2020); S&amp;P 500 Growth (42.5%) vs. Value (5.7%) divergence.<br />
+<strong>Implication:</strong> “Magnificent 7” drives market: 37.5% of S&amp;P 500 Weight (vs. 28% ’20). Ex-7 stocks trade at 14.6% below historical median multiples.  </p>
 <hr />
 <h3>8. Conclusion &amp; Trade Tilt</h3>
-<p><strong>Cross-Asset Confirmation</strong>: Fed funds futures (-0.25bps) vs EURIBOR (+0.42%) spotlight USD carry trade.<br />
-<strong>Risk Rating</strong>: Negative Sensitivity (Inflation &gt; Growth).<br />
-<strong>The Trade</strong>: Short-term USD duration (2-Year Treasury 147bp) / Longality premium (20-Year).<br />
-<strong>Triggers</strong>: Higher-than-expected CPI (Dec ’24 forward: 2.57%), Fed rate pause inversion, or S&amp;P 500 VIX breakout above 24.  </p>
-<h2>---</h2>
-<p><strong>Word Count</strong>: ~950</p></div>
+<p><strong>Cross-Asset Confirmation:</strong> Steep curve + underperforming small-caps + high AI stocks = overextended rally.<br />
+<strong>Risk Rating:</strong> 6/10 (Elevated upside risk from Fed easing, downside from inflation surprise).<br />
+<strong>The Trade:</strong><br />
+- <strong>Long:</strong> 10-Year TIPS (-0.08% YoY yield decline) or Ultra-Short Treasury (-0.65%).<br />
+- <strong>Short:</strong> S&amp;P 500 (34.2% premium vs. Value) and S&amp;P 600 (21.3% discount rationale).<br />
+<strong>Triggers:</strong> Fed policy misstep (rate hike misconception) or CPI &gt;6.0% in Jan 2026.</p></div>
         
         <div style="text-align: center; margin-top: 40px; color: #666; font-size: 0.9em;">
-            Generated on 2025-12-22 02:12:08 | <a href="https://github.com/jpeirce/daily-macro-summary" style="color: #666;">View Source</a>
+            Generated on 2025-12-22 03:26:13 | <a href="https://github.com/jpeirce/daily-macro-summary" style="color: #666;">View Source</a>
         </div>
     </body>
     </html>
