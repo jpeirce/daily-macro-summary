@@ -1364,16 +1364,30 @@ def generate_html(today, summary_or, summary_gemini, scores, details, extracted_
 
     # Construct Event Callout
     event_callout_html = ""
+    combined_notes = []
+    callout_flags = []
+    
     if event_context and event_context.get('flags_today'):
-        flags = event_context['flags_today']
-        # Filter for significant events to show in callout if desired, or show all
-        notes = [event_context['notes'].get(f, "Market event.") for f in flags]
+        callout_flags.extend(event_context['flags_today'])
+        combined_notes.extend([event_context['notes'].get(f, "Market event.") for f in event_context['flags_today']])
+        
+    # Append Quality Notes from Rates Curve (Section 09)
+    if rates_curve and rates_curve.get('quality', {}).get('notes'):
+        q_notes = rates_curve['quality']['notes']
+        # Filter out internal sentinel notes like 'partial_section09_parse' for cleaner UI
+        clean_q_notes = [n for n in q_notes if not n.startswith("partial_")]
+        if clean_q_notes:
+            combined_notes.extend(clean_q_notes)
+            if "DATA_QUALITY_ALERT" not in callout_flags:
+                callout_flags.append("DATA_QUALITY_ALERT")
+
+    if combined_notes:
         event_callout_html = f"""
         <div class="event-callout">
             <span style="font-size: 1.5em;">&#9888;&#65039;</span>
             <div>
-                <strong>Event Context:</strong> {', '.join(flags)}<br>
-                <small style="color: #666; font-style: italic;">{' '.join(notes)}</small>
+                <strong>Event/Data Alert:</strong> {', '.join(callout_flags)}<br>
+                <small style="color: #666; font-style: italic;">{' '.join(combined_notes)}</small>
             </div>
         </div>
         """
