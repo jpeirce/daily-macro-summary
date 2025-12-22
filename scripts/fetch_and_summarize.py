@@ -154,7 +154,12 @@ JSON OUTPUT SCHEMA:
 
 BENCHMARK_SYSTEM_PROMPT = """
 Role: You are a macro strategist for a top-tier hedge fund.
-Task: Analyze the provided visual inputs (WisdomTree Dashboard & CME Bulletin) to produce a strategic, easy-to-digest market outlook.
+Task: Analyze the provided visual inputs to produce a strategic, easy-to-digest market outlook.
+
+Inputs Provided:
+1. **WisdomTree Dashboard:** General macro/market context.
+2. **CME Bulletin (Section 01):** Volume and Open Interest totals.
+3. **CME Rates Curve (Section 09):** Treasury futures yield curve positioning.
 
 Format Constraints:
 Length: Total output must be 700–1,000 words.
@@ -840,6 +845,11 @@ def summarize_openrouter(pdf_paths, ground_truth, event_context, model_override=
     if "cme_vol" in pdf_paths:
         cme_images = pdf_to_images(pdf_paths["cme_vol"])
         images.extend(cme_images[:1]) # Just the first page
+
+    # And CME Rates Curve (Section 09) - First page usually has the summary table
+    if "cme_sec09" in pdf_paths:
+        sec09_images = pdf_to_images(pdf_paths["cme_sec09"])
+        images.extend(sec09_images[:1])
     
     if RUN_MODE == "BENCHMARK":
         formatted_prompt = BENCHMARK_SYSTEM_PROMPT
